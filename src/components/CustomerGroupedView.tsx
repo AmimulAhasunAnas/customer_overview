@@ -154,6 +154,8 @@ export const CustomerGroupedView: React.FC<CustomerGroupedViewProps> = ({
                             <th className="pb-2">Device Model</th>
                             <th className="pb-2">Serial Number / Hostname</th>
                             <th className="pb-2">Status</th>
+                            <th className="pb-2">Start Date</th>
+                            <th className="pb-2">End Date</th>
                             <th className="pb-2">Deployment Location</th>
                             <th className="pb-2 text-right">Actions</th>
                           </tr>
@@ -177,6 +179,8 @@ export const CustomerGroupedView: React.FC<CustomerGroupedViewProps> = ({
                                   {device.status}
                                 </span>
                               </td>
+                              <td className="py-2.5 font-mono text-slate-600 text-[11px] whitespace-nowrap">{device.startDate || '—'}</td>
+                              <td className="py-2.5 font-mono text-slate-600 text-[11px] whitespace-nowrap">{device.endDate || '—'}</td>
                               <td className="py-2.5 text-slate-500 text-[11px]">{device.location || '—'}</td>
                               <td className="py-2.5 text-right">
                                 <button

@@ -90,7 +90,8 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
       const rawStatus = getField(row, ['Status', 'State', 'Lifecycle Status', 'Condition']);
       const industry = getField(row, ['Industry / Sector', 'Industry', 'Sector', 'Vertical', 'Category']) || 'General Enterprise';
       const location = getField(row, ['Location', 'Site', 'Data Center', 'Facility', 'Region']);
-      const warrantyExpiry = getField(row, ['Warranty Expiration', 'Warranty', 'Expiry Date', 'Warranty End']);
+      const startDate = getField(row, ['Start Date', 'Deployment Start', 'Contract Start', 'Install Date', 'Start Date / Deployment', 'Start']);
+      const endDate = getField(row, ['End Date', 'Contract End', 'Warranty Expiration', 'Warranty', 'Expiry Date', 'Warranty End', 'End Date / Expiry', 'End']);
 
       // Skip completely blank rows
       if (!customerName && !oemBrand && !deviceModel && !serialNumber) {
@@ -114,8 +115,10 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
         deviceModel: deviceModel || 'Standard Hardware',
         serialNumber: serialNumber || `SN-${Math.floor(100000 + Math.random() * 900000)}`,
         status,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         location: location || undefined,
-        warrantyExpiry: warrantyExpiry || undefined,
+        warrantyExpiry: endDate || undefined,
       });
     });
 
@@ -138,8 +141,9 @@ export function downloadSampleTemplate(): void {
       'Device Type / Model': 'Catalyst 9300 48P Switch',
       'Device Serial Number / Hostname': 'CSCO-9300-8812A',
       'Status': 'Active',
+      'Start Date': '2023-08-15',
+      'End Date': '2027-08-15',
       'Location': 'NY-Primary DC (Equinix NY4)',
-      'Warranty Expiration': '2027-08-15',
     },
     {
       'Customer Name': 'Apex Capital Partners',
@@ -148,8 +152,9 @@ export function downloadSampleTemplate(): void {
       'Device Type / Model': 'PA-3260 Next-Gen Firewall',
       'Device Serial Number / Hostname': 'PANW-3260-X0921',
       'Status': 'Active',
+      'Start Date': '2022-11-30',
+      'End Date': '2026-11-30',
       'Location': 'NY-Primary DC (Equinix NY4)',
-      'Warranty Expiration': '2026-11-30',
     },
     {
       'Customer Name': 'AcroPoint Global Logistics',
@@ -158,8 +163,9 @@ export function downloadSampleTemplate(): void {
       'Device Type / Model': 'PowerEdge R750 2U Server',
       'Device Serial Number / Hostname': 'DELL-R750-NV914',
       'Status': 'Active',
+      'Start Date': '2023-02-10',
+      'End Date': '2028-02-10',
       'Location': 'Chicago Hub (ORD-01)',
-      'Warranty Expiration': '2028-02-10',
     },
     {
       'Customer Name': 'AcroPoint Global Logistics',
@@ -168,8 +174,9 @@ export function downloadSampleTemplate(): void {
       'Device Type / Model': 'ThinkSystem SR650 V2',
       'Device Serial Number / Hostname': 'LNV-SR650-M1044',
       'Status': 'Maintenance',
+      'Start Date': '2021-12-18',
+      'End Date': '2025-12-18',
       'Location': 'Dallas Distribution (DFW-04)',
-      'Warranty Expiration': '2025-12-18',
     },
     {
       'Customer Name': 'Zenith Health Systems',
@@ -178,8 +185,9 @@ export function downloadSampleTemplate(): void {
       'Device Type / Model': 'ProLiant DL380 Gen10 Server',
       'Device Serial Number / Hostname': 'HPE-DL380-K7712',
       'Status': 'Retired',
+      'Start Date': '2019-05-10',
+      'End Date': '2024-05-10',
       'Location': 'Boston Clinical HQ',
-      'Warranty Expiration': '2024-05-10',
     },
   ];
 
@@ -193,8 +201,9 @@ export function downloadSampleTemplate(): void {
     { wch: 32 }, // Device Model
     { wch: 30 }, // Serial Number
     { wch: 14 }, // Status
+    { wch: 14 }, // Start Date
+    { wch: 14 }, // End Date
     { wch: 30 }, // Location
-    { wch: 20 }, // Warranty Expiration
   ];
 
   const workbook = XLSX.utils.book_new();
@@ -213,11 +222,23 @@ export function exportRecordsToExcel(records: CustomerDeviceRecord[], filename =
     'Device Type / Model': r.deviceModel,
     'Device Serial Number / Hostname': r.serialNumber,
     'Status': r.status,
+    'Start Date': r.startDate || '',
+    'End Date': r.endDate || '',
     'Location': r.location || '',
-    'Warranty Expiration': r.warrantyExpiry || '',
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(exportRows);
+  worksheet['!cols'] = [
+    { wch: 28 },
+    { wch: 24 },
+    { wch: 16 },
+    { wch: 32 },
+    { wch: 30 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 30 },
+  ];
   worksheet['!cols'] = [
     { wch: 28 },
     { wch: 24 },
@@ -282,7 +303,27 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    @media print {
+      header, footer, #dropzoneContainer, .no-print, input, select {
+        display: none !important;
+      }
+      body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-size: 10pt !important;
+      }
+      .shadow-xs, .shadow-sm, .shadow-md, .shadow-2xs {
+        box-shadow: none !important;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        padding: 5px 8px !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
@@ -303,6 +344,12 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
+        <button id="btnPrint" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-xs" title="Print dashboard report">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Print
+        </button>
         <button id="btnDownloadTemplate" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-xs">
           <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -495,6 +542,18 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
                   <span class="sort-icon text-slate-400">↕</span>
                 </div>
               </th>
+              <th id="thStartDate" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors whitespace-nowrap">
+                <div class="flex items-center gap-1">
+                  <span>Start Date</span>
+                  <span class="sort-icon text-slate-400">↕</span>
+                </div>
+              </th>
+              <th id="thEndDate" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors whitespace-nowrap">
+                <div class="flex items-center gap-1">
+                  <span>End Date</span>
+                  <span class="sort-icon text-slate-400">↕</span>
+                </div>
+              </th>
               <th class="py-3 px-4 text-right">Location</th>
             </tr>
           </thead>
@@ -636,6 +695,8 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
       document.getElementById('thOem').addEventListener('click', () => toggleSort('oemBrand'));
       document.getElementById('thModel').addEventListener('click', () => toggleSort('deviceModel'));
       document.getElementById('thStatus').addEventListener('click', () => toggleSort('status'));
+      document.getElementById('thStartDate').addEventListener('click', () => toggleSort('startDate'));
+      document.getElementById('thEndDate').addEventListener('click', () => toggleSort('endDate'));
 
       // Pagination
       document.getElementById('pageSizeSelect').addEventListener('change', (e) => {
@@ -960,6 +1021,8 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
               r.status +
             '</span>' +
           '</td>' +
+          '<td class="py-3 px-4 font-mono text-slate-600 text-[11px] whitespace-nowrap">' + escapeHtml(r.startDate || '—') + '</td>' +
+          '<td class="py-3 px-4 font-mono text-slate-600 text-[11px] whitespace-nowrap">' + escapeHtml(r.endDate || '—') + '</td>' +
           '<td class="py-3 px-4 text-right text-slate-500 text-[11px]">' + escapeHtml(r.location || '—') + '</td>' +
         '</tr>';
       });

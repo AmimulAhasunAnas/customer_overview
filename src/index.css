@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+@media print {
+  header, footer, nav, #dropzoneContainer, .print\:hidden, input, select {
+    display: none !important;
+  }
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10pt !important;
+  }
+  .shadow-xs, .shadow-sm, .shadow-md, .shadow-2xs {
+    box-shadow: none !important;
+  }
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th, td {
+    padding: 6px 8px !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+}

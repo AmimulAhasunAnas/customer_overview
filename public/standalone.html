@@ -39,15 +39,37 @@
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    @media print {
+      header, footer, #dropzoneContainer, .no-print, input, select {
+        display: none !important;
+      }
+      body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-size: 10pt !important;
+      }
+      .shadow-xs, .shadow-sm, .shadow-md, .shadow-2xs {
+        box-shadow: none !important;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        padding: 5px 8px !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
 
   <!-- Top Navigation Header -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-sky-600 text-white flex items-center justify-center shadow-sm">
+        <div class="w-10 h-10 rounded-lg bg-sky-600 text-white flex items-center justify-center shadow-xs">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
           </svg>
@@ -59,6 +81,13 @@
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
+        <button id="btnPrint" onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-xs" title="Print dashboard report">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Print
+        </button>
+
         <button id="btnDownloadTemplate" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-xs">
           <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -94,7 +123,7 @@
           </div>
           <div>
             <h2 class="text-sm font-semibold text-slate-900">Upload Customer OEM Spreadsheet</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Drag and drop an Excel (.xlsx, .xls) or CSV file here. 100% client-side parsing via SheetJS — no data leaves your browser.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Drag and drop an Excel (.xlsx, .xls) or CSV file here. Includes Start Date, End Date, Customer, and OEM fields.</p>
             <div id="fileUploadStatus" class="mt-2 text-xs text-emerald-600 font-medium hidden"></div>
           </div>
         </div>
@@ -148,7 +177,6 @@
 
     <!-- Charts Section -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- OEM Breakdown Chart -->
       <div class="lg:col-span-5 bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
@@ -161,7 +189,6 @@
         </div>
       </div>
 
-      <!-- Customer Distribution by OEM Chart -->
       <div class="lg:col-span-7 bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
@@ -177,7 +204,7 @@
 
     <!-- Filter & Management Controls -->
     <section class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-      <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3">
+      <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3 no-print">
         <!-- Search -->
         <div class="relative flex-1 min-w-[260px] max-w-md">
           <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,32 +213,37 @@
           <input
             type="text"
             id="searchInput"
-            placeholder="Search by customer, OEM, model, serial..."
-            class="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
+            placeholder="Search customer, OEM, model, serial..."
+            class="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
           />
           <button id="clearSearchBtn" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 hidden text-xs font-bold">&times;</button>
         </div>
 
         <!-- Filter Dropdowns -->
         <div class="flex items-center gap-2 flex-wrap">
-          <select id="filterOem" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500">
+          <select id="filterOem" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md">
             <option value="">All OEMs</option>
           </select>
 
-          <select id="filterStatus" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500">
+          <select id="filterStatus" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md">
             <option value="">All Statuses</option>
             <option value="Active">Active</option>
             <option value="Maintenance">Maintenance</option>
             <option value="Retired">Retired</option>
           </select>
 
-          <select id="filterIndustry" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500">
+          <select id="filterIndustry" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md">
             <option value="">All Industries</option>
           </select>
 
-          <div class="h-5 w-px bg-slate-200 mx-1"></div>
+          <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 shadow-xs">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Print Table
+          </button>
 
-          <span id="filteredCountText" class="text-xs text-slate-500 font-medium">0 items</span>
+          <span id="filteredCountText" class="text-xs text-slate-500 font-medium ml-1">0 items</span>
         </div>
       </div>
 
@@ -220,54 +252,27 @@
         <table class="w-full text-left border-collapse text-xs">
           <thead>
             <tr class="border-b border-slate-200 bg-slate-100/75 text-slate-600 font-medium select-none">
-              <th id="thCustomer" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">
-                <div class="flex items-center gap-1">
-                  <span>Customer / Company</span>
-                  <span class="sort-icon text-slate-400">↕</span>
-                </div>
-              </th>
-              <th id="thIndustry" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">
-                <div class="flex items-center gap-1">
-                  <span>Industry</span>
-                  <span class="sort-icon text-slate-400">↕</span>
-                </div>
-              </th>
-              <th id="thOem" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">
-                <div class="flex items-center gap-1">
-                  <span>OEM Brand</span>
-                  <span class="sort-icon text-slate-400">↕</span>
-                </div>
-              </th>
-              <th id="thModel" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">
-                <div class="flex items-center gap-1">
-                  <span>Device Model</span>
-                  <span class="sort-icon text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="py-3 px-4">Serial Number / Hostname</th>
-              <th id="thStatus" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">
-                <div class="flex items-center gap-1">
-                  <span>Status</span>
-                  <span class="sort-icon text-slate-400">↕</span>
-                </div>
-              </th>
+              <th id="thCustomer" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">Customer / Company ↕</th>
+              <th id="thIndustry" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">Industry ↕</th>
+              <th id="thOem" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">OEM Brand ↕</th>
+              <th id="thModel" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">Device Model ↕</th>
+              <th class="py-3 px-4">Serial Number</th>
+              <th id="thStatus" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">Status ↕</th>
+              <th id="thStartDate" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors whitespace-nowrap">Start Date ↕</th>
+              <th id="thEndDate" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors whitespace-nowrap">End Date ↕</th>
               <th class="py-3 px-4 text-right">Location</th>
             </tr>
           </thead>
-          <tbody id="tableBody" class="divide-y divide-slate-100 font-normal">
-            <!-- Populated via JavaScript -->
-          </tbody>
+          <tbody id="tableBody" class="divide-y divide-slate-100 font-normal"></tbody>
         </table>
       </div>
 
-      <!-- Empty State -->
       <div id="emptyState" class="py-12 text-center hidden">
         <p class="text-sm font-medium text-slate-700">No matching records found</p>
-        <p class="text-xs text-slate-500 mt-1">Try adjusting your search criteria or resetting filters.</p>
       </div>
 
-      <!-- Table Pagination Footer -->
-      <div class="p-3 border-t border-slate-200 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
+      <!-- Pagination Footer -->
+      <div class="p-3 border-t border-slate-200 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 no-print">
         <div class="flex items-center gap-2">
           <span>Show</span>
           <select id="pageSizeSelect" class="bg-white border border-slate-300 rounded px-2 py-1 text-xs">
@@ -288,267 +293,31 @@
 
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-white border-t border-slate-200 py-4 mt-8">
+  <footer class="bg-white border-t border-slate-200 py-4 mt-8 no-print">
     <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
       <p>Customer OEM Tracker &bull; Standalone Single-Page Application for GitHub Pages</p>
       <p>Powered by SheetJS, Tailwind CSS &amp; Chart.js</p>
     </div>
   </footer>
 
-  <!-- Application Logic -->
   <script>
     const DEFAULT_RECORDS = [
-      {
-        id: 'rec-1',
-        customerName: 'Apex Capital Partners',
-        industry: 'Financial Services',
-        oemBrand: 'Cisco',
-        deviceModel: 'Catalyst 9300 48P Switch',
-        serialNumber: 'CSCO-9300-8812A',
-        status: 'Active',
-        location: 'NY-Primary DC (Equinix NY4)'
-      },
-      {
-        id: 'rec-2',
-        customerName: 'Apex Capital Partners',
-        industry: 'Financial Services',
-        oemBrand: 'Palo Alto',
-        deviceModel: 'PA-3260 Next-Gen Firewall',
-        serialNumber: 'PANW-3260-X0921',
-        status: 'Active',
-        location: 'NY-Primary DC (Equinix NY4)'
-      },
-      {
-        id: 'rec-3',
-        customerName: 'Apex Capital Partners',
-        industry: 'Financial Services',
-        oemBrand: 'Dell',
-        deviceModel: 'PowerEdge R750 2U Server',
-        serialNumber: 'DELL-R750-NV914',
-        status: 'Active',
-        location: 'NJ-DR Site (Secaucus)'
-      },
-      {
-        id: 'rec-4',
-        customerName: 'AcroPoint Global Logistics',
-        industry: 'Supply Chain & Freight',
-        oemBrand: 'Cisco',
-        deviceModel: 'Catalyst 9200L 24P PoE+',
-        serialNumber: 'CSCO-9200-5510B',
-        status: 'Active',
-        location: 'Chicago Hub (ORD-01)'
-      },
-      {
-        id: 'rec-5',
-        customerName: 'AcroPoint Global Logistics',
-        industry: 'Supply Chain & Freight',
-        oemBrand: 'HP',
-        deviceModel: 'ProLiant DL380 Gen10 Server',
-        serialNumber: 'HPE-DL380-K7712',
-        status: 'Active',
-        location: 'Dallas Distribution (DFW-04)'
-      },
-      {
-        id: 'rec-6',
-        customerName: 'AcroPoint Global Logistics',
-        industry: 'Supply Chain & Freight',
-        oemBrand: 'Lenovo',
-        deviceModel: 'ThinkSystem SR650 V2',
-        serialNumber: 'LNV-SR650-M1044',
-        status: 'Maintenance',
-        location: 'Dallas Distribution (DFW-04)'
-      },
-      {
-        id: 'rec-7',
-        customerName: 'Zenith Health Systems',
-        industry: 'Healthcare',
-        oemBrand: 'Dell',
-        deviceModel: 'PowerEdge R650xs Dual-Node',
-        serialNumber: 'DELL-R650-Z8821',
-        status: 'Active',
-        location: 'Boston Clinical HQ'
-      },
-      {
-        id: 'rec-8',
-        customerName: 'Zenith Health Systems',
-        industry: 'Healthcare',
-        oemBrand: 'Palo Alto',
-        deviceModel: 'PA-5250 Security Gateway',
-        serialNumber: 'PANW-5250-H4491',
-        status: 'Active',
-        location: 'Boston Clinical HQ'
-      },
-      {
-        id: 'rec-9',
-        customerName: 'Zenith Health Systems',
-        industry: 'Healthcare',
-        oemBrand: 'Cisco',
-        deviceModel: 'Nexus 93180YC-FX Switch',
-        serialNumber: 'CSCO-NX93-3390C',
-        status: 'Active',
-        location: 'Waltham Backup DC'
-      },
-      {
-        id: 'rec-10',
-        customerName: 'Zenith Health Systems',
-        industry: 'Healthcare',
-        oemBrand: 'HP',
-        deviceModel: 'ProLiant DL360 Gen10',
-        serialNumber: 'HPE-DL360-T1102',
-        status: 'Retired',
-        location: 'Waltham Storage Cage'
-      },
-      {
-        id: 'rec-11',
-        customerName: 'CloudScale Infrastructure',
-        industry: 'Cloud & Telecommunications',
-        oemBrand: 'Dell',
-        deviceModel: 'PowerEdge MX7000 Modular Chassis',
-        serialNumber: 'DELL-MX7-9921D',
-        status: 'Active',
-        location: 'Ashburn VA (IAD-02)'
-      },
-      {
-        id: 'rec-12',
-        customerName: 'CloudScale Infrastructure',
-        industry: 'Cloud & Telecommunications',
-        oemBrand: 'Cisco',
-        deviceModel: 'Nexus 9504 Core Spine Switch',
-        serialNumber: 'CSCO-NX95-0041S',
-        status: 'Active',
-        location: 'Ashburn VA (IAD-02)'
-      },
-      {
-        id: 'rec-13',
-        customerName: 'CloudScale Infrastructure',
-        industry: 'Cloud & Telecommunications',
-        oemBrand: 'Lenovo',
-        deviceModel: 'ThinkSystem SR860 4-Socket',
-        serialNumber: 'LNV-SR860-E9023',
-        status: 'Active',
-        location: 'Santa Clara CA (SJC-01)'
-      },
-      {
-        id: 'rec-14',
-        customerName: 'BioGen Discovery Labs',
-        industry: 'Biotechnology & Pharma',
-        oemBrand: 'HP',
-        deviceModel: 'ProLiant DL385 Gen10 Plus AMD',
-        serialNumber: 'HPE-DL385-B4109',
-        status: 'Active',
-        location: 'Cambridge Research Lab'
-      },
-      {
-        id: 'rec-15',
-        customerName: 'BioGen Discovery Labs',
-        industry: 'Biotechnology & Pharma',
-        oemBrand: 'Palo Alto',
-        deviceModel: 'PA-1410 Branch Firewall',
-        serialNumber: 'PANW-1410-P7721',
-        status: 'Active',
-        location: 'South San Francisco Facility'
-      },
-      {
-        id: 'rec-16',
-        customerName: 'BioGen Discovery Labs',
-        industry: 'Biotechnology & Pharma',
-        oemBrand: 'Dell',
-        deviceModel: 'PowerScale A300 All-Flash NAS',
-        serialNumber: 'DELL-PS30-V2039',
-        status: 'Maintenance',
-        location: 'Cambridge Genomics Cluster'
-      },
-      {
-        id: 'rec-17',
-        customerName: 'OmniVanguard Media',
-        industry: 'Digital Media & Streaming',
-        oemBrand: 'Dell',
-        deviceModel: 'PowerEdge R7525 Dual AMD EPYC',
-        serialNumber: 'DELL-R752-Q8841',
-        status: 'Active',
-        location: 'Los Angeles Studio DC'
-      },
-      {
-        id: 'rec-18',
-        customerName: 'OmniVanguard Media',
-        industry: 'Digital Media & Streaming',
-        oemBrand: 'Cisco',
-        deviceModel: 'Catalyst 9500 40G Core Switch',
-        serialNumber: 'CSCO-9500-A6612',
-        status: 'Active',
-        location: 'Los Angeles Studio DC'
-      },
-      {
-        id: 'rec-19',
-        customerName: 'OmniVanguard Media',
-        industry: 'Digital Media & Streaming',
-        oemBrand: 'Lenovo',
-        deviceModel: 'ThinkSystem DM7100F SAN Storage',
-        serialNumber: 'LNV-DM71-F0918',
-        status: 'Retired',
-        location: 'Culver City Archive Vault'
-      },
-      {
-        id: 'rec-20',
-        customerName: 'Kinetics Advanced Manufacturing',
-        industry: 'Automotive & Industrial',
-        oemBrand: 'Lenovo',
-        deviceModel: 'ThinkEdge SE350 Rugged Edge Server',
-        serialNumber: 'LNV-SE35-R3390',
-        status: 'Active',
-        location: 'Detroit Assembly Plant 1'
-      },
-      {
-        id: 'rec-21',
-        customerName: 'Kinetics Advanced Manufacturing',
-        industry: 'Automotive & Industrial',
-        oemBrand: 'HP',
-        deviceModel: 'Edgeline EL8000 Converged Edge',
-        serialNumber: 'HPE-EL80-G7718',
-        status: 'Active',
-        location: 'Stuttgart Automation Line'
-      },
-      {
-        id: 'rec-22',
-        customerName: 'Kinetics Advanced Manufacturing',
-        industry: 'Automotive & Industrial',
-        oemBrand: 'Cisco',
-        deviceModel: 'Industrial Ethernet IE4000 Switch',
-        serialNumber: 'CSCO-IE40-9912W',
-        status: 'Maintenance',
-        location: 'Detroit Assembly Plant 1'
-      },
-      {
-        id: 'rec-23',
-        customerName: 'Solaris Energy Grid',
-        industry: 'Energy & Utilities',
-        oemBrand: 'Cisco',
-        deviceModel: 'Catalyst IR1101 Rugged Router',
-        serialNumber: 'CSCO-IR11-5501S',
-        status: 'Active',
-        location: 'Phoenix Substation West'
-      },
-      {
-        id: 'rec-24',
-        customerName: 'Solaris Energy Grid',
-        industry: 'Energy & Utilities',
-        oemBrand: 'Dell',
-        deviceModel: 'PowerEdge XR12 Rugged 1U Server',
-        serialNumber: 'DELL-XR12-H1198',
-        status: 'Active',
-        location: 'Phoenix Grid Ops Center'
-      },
-      {
-        id: 'rec-25',
-        customerName: 'Solaris Energy Grid',
-        industry: 'Energy & Utilities',
-        oemBrand: 'Palo Alto',
-        deviceModel: 'PA-3410 Security Appliance',
-        serialNumber: 'PANW-3410-E5531',
-        status: 'Active',
-        location: 'Phoenix Grid Ops Center'
-      }
+      { id: '1', customerName: 'Apex Capital Partners', industry: 'Financial Services', oemBrand: 'Cisco', deviceModel: 'Catalyst 9300 48P Switch', serialNumber: 'CSCO-9300-8812A', status: 'Active', startDate: '2023-08-15', endDate: '2027-08-15', location: 'NY-Primary DC (Equinix NY4)' },
+      { id: '2', customerName: 'Apex Capital Partners', industry: 'Financial Services', oemBrand: 'Palo Alto', deviceModel: 'PA-3260 Next-Gen Firewall', serialNumber: 'PANW-3260-X0921', status: 'Active', startDate: '2022-11-30', endDate: '2026-11-30', location: 'NY-Primary DC (Equinix NY4)' },
+      { id: '3', customerName: 'Apex Capital Partners', industry: 'Financial Services', oemBrand: 'Dell', deviceModel: 'PowerEdge R750 2U Server', serialNumber: 'DELL-R750-NV914', status: 'Active', startDate: '2023-02-10', endDate: '2028-02-10', location: 'NJ-DR Site (Secaucus)' },
+      { id: '4', customerName: 'AcroPoint Global Logistics', industry: 'Supply Chain & Freight', oemBrand: 'Cisco', deviceModel: 'Catalyst 9200L 24P PoE+', serialNumber: 'CSCO-9200-5510B', status: 'Active', startDate: '2023-03-22', endDate: '2027-03-22', location: 'Chicago Hub (ORD-01)' },
+      { id: '5', customerName: 'AcroPoint Global Logistics', industry: 'Supply Chain & Freight', oemBrand: 'HP', deviceModel: 'ProLiant DL380 Gen10 Server', serialNumber: 'HPE-DL380-K7712', status: 'Active', startDate: '2022-09-01', endDate: '2026-09-01', location: 'Dallas Distribution (DFW-04)' },
+      { id: '6', customerName: 'AcroPoint Global Logistics', industry: 'Supply Chain & Freight', oemBrand: 'Lenovo', deviceModel: 'ThinkSystem SR650 V2', serialNumber: 'LNV-SR650-M1044', status: 'Maintenance', startDate: '2021-12-18', endDate: '2025-12-18', location: 'Dallas Distribution (DFW-04)' },
+      { id: '7', customerName: 'Zenith Health Systems', industry: 'Healthcare', oemBrand: 'Dell', deviceModel: 'PowerEdge R650xs Dual-Node', serialNumber: 'DELL-R650-Z8821', status: 'Active', startDate: '2023-06-30', endDate: '2028-06-30', location: 'Boston Clinical HQ' },
+      { id: '8', customerName: 'Zenith Health Systems', industry: 'Healthcare', oemBrand: 'Palo Alto', deviceModel: 'PA-5250 Security Gateway', serialNumber: 'PANW-5250-H4491', status: 'Active', startDate: '2022-10-15', endDate: '2027-10-15', location: 'Boston Clinical HQ' },
+      { id: '9', customerName: 'Zenith Health Systems', industry: 'Healthcare', oemBrand: 'Cisco', deviceModel: 'Nexus 93180YC-FX Switch', serialNumber: 'CSCO-NX93-3390C', status: 'Active', startDate: '2023-01-14', endDate: '2027-01-14', location: 'Waltham Backup DC' },
+      { id: '10', customerName: 'Zenith Health Systems', industry: 'Healthcare', oemBrand: 'HP', deviceModel: 'ProLiant DL360 Gen10', serialNumber: 'HPE-DL360-T1102', status: 'Retired', startDate: '2019-05-10', endDate: '2024-05-10', location: 'Waltham Storage Cage' },
+      { id: '11', customerName: 'CloudScale Infrastructure', industry: 'Cloud & Telecommunications', oemBrand: 'Dell', deviceModel: 'PowerEdge MX7000 Modular', serialNumber: 'DELL-MX7-9921D', status: 'Active', startDate: '2024-01-20', endDate: '2029-01-20', location: 'Ashburn VA (IAD-02)' },
+      { id: '12', customerName: 'BioGen Discovery Labs', industry: 'Biotechnology & Pharma', oemBrand: 'HP', deviceModel: 'ProLiant DL385 Gen10 Plus', serialNumber: 'HPE-DL385-B4109', status: 'Active', startDate: '2023-09-12', endDate: '2027-09-12', location: 'Cambridge Research Lab' },
+      { id: '13', customerName: 'BioGen Discovery Labs', industry: 'Biotechnology & Pharma', oemBrand: 'Palo Alto', deviceModel: 'PA-1410 Branch Firewall', serialNumber: 'PANW-1410-P7721', status: 'Active', startDate: '2022-12-01', endDate: '2026-12-01', location: 'South San Francisco' },
+      { id: '14', customerName: 'OmniVanguard Media', industry: 'Digital Media & Streaming', oemBrand: 'Dell', deviceModel: 'PowerEdge R7525 Dual AMD', serialNumber: 'DELL-R752-Q8841', status: 'Active', startDate: '2023-03-15', endDate: '2028-03-15', location: 'Los Angeles Studio DC' },
+      { id: '15', customerName: 'Solaris Energy Grid', industry: 'Energy & Utilities', oemBrand: 'Cisco', deviceModel: 'Catalyst IR1101 Rugged Router', serialNumber: 'CSCO-IR11-5501S', status: 'Active', startDate: '2023-11-19', endDate: '2028-11-19', location: 'Phoenix Substation West' },
+      { id: '16', customerName: 'Solaris Energy Grid', industry: 'Energy & Utilities', oemBrand: 'Dell', deviceModel: 'PowerEdge XR12 Rugged 1U', serialNumber: 'DELL-XR12-H1198', status: 'Active', startDate: '2023-05-25', endDate: '2027-05-25', location: 'Phoenix Grid Ops Center' }
     ];
 
     let allRecords = JSON.parse(JSON.stringify(DEFAULT_RECORDS));
@@ -558,26 +327,12 @@
     let currentPage = 1;
     let pageSize = 25;
 
-    let chartOemInstance = null;
-    let chartCustomerInstance = null;
+    let chartOemInstance = null, chartCustomerInstance = null;
 
-    const OEM_COLORS = {
-      'Cisco': '#0284c7',
-      'Dell': '#2563eb',
-      'HP': '#0d9488',
-      'Palo Alto': '#ea580c',
-      'Lenovo': '#dc2626',
-      'Fortinet': '#b91c1c',
-      'Juniper': '#4f46e5',
-      'Arista': '#7c3aed',
-      'Other': '#64748b'
-    };
-
+    const OEM_COLORS = { 'Cisco': '#0284c7', 'Dell': '#2563eb', 'HP': '#0d9488', 'Palo Alto': '#ea580c', 'Lenovo': '#dc2626' };
     function getOemColor(oem) {
-      for (const key of Object.keys(OEM_COLORS)) {
-        if (oem.toLowerCase().includes(key.toLowerCase())) {
-          return OEM_COLORS[key];
-        }
+      for (const k of Object.keys(OEM_COLORS)) {
+        if (oem.toLowerCase().includes(k.toLowerCase())) return OEM_COLORS[k];
       }
       return '#64748b';
     }
@@ -590,43 +345,18 @@
 
     function setupEventListeners() {
       const fileInput = document.getElementById('excelFileInput');
+      fileInput.addEventListener('change', (e) => { if (e.target.files[0]) processExcelFile(e.target.files[0]); });
+
       const dropzone = document.getElementById('dropzoneContainer');
-
-      fileInput.addEventListener('change', handleFileSelect);
-
-      dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropzone.classList.add('border-sky-500', 'bg-sky-50/30');
-      });
-
-      dropzone.addEventListener('dragleave', () => {
-        dropzone.classList.remove('border-sky-500', 'bg-sky-50/30');
-      });
-
+      dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-sky-500'); });
+      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-sky-500'));
       dropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropzone.classList.remove('border-sky-500', 'bg-sky-50/30');
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-          processExcelFile(e.dataTransfer.files[0]);
-        }
+        e.preventDefault(); dropzone.classList.remove('border-sky-500');
+        if (e.dataTransfer.files[0]) processExcelFile(e.dataTransfer.files[0]);
       });
 
       const searchInput = document.getElementById('searchInput');
-      const clearSearchBtn = document.getElementById('clearSearchBtn');
-      searchInput.addEventListener('input', () => {
-        if (searchInput.value.trim().length > 0) {
-          clearSearchBtn.classList.remove('hidden');
-        } else {
-          clearSearchBtn.classList.add('hidden');
-        }
-        applyFilters();
-      });
-
-      clearSearchBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        clearSearchBtn.classList.add('hidden');
-        applyFilters();
-      });
+      searchInput.addEventListener('input', applyFilters);
 
       document.getElementById('filterOem').addEventListener('change', applyFilters);
       document.getElementById('filterStatus').addEventListener('change', applyFilters);
@@ -637,6 +367,8 @@
       document.getElementById('thOem').addEventListener('click', () => toggleSort('oemBrand'));
       document.getElementById('thModel').addEventListener('click', () => toggleSort('deviceModel'));
       document.getElementById('thStatus').addEventListener('click', () => toggleSort('status'));
+      document.getElementById('thStartDate').addEventListener('click', () => toggleSort('startDate'));
+      document.getElementById('thEndDate').addEventListener('click', () => toggleSort('endDate'));
 
       document.getElementById('pageSizeSelect').addEventListener('change', (e) => {
         pageSize = parseInt(e.target.value, 10);
@@ -644,19 +376,10 @@
         renderTable();
       });
 
-      document.getElementById('btnPrevPage').addEventListener('click', () => {
-        if (currentPage > 1) {
-          currentPage--;
-          renderTable();
-        }
-      });
-
+      document.getElementById('btnPrevPage').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTable(); } });
       document.getElementById('btnNextPage').addEventListener('click', () => {
         const totalPages = Math.ceil(filteredRecords.length / pageSize);
-        if (currentPage < totalPages) {
-          currentPage++;
-          renderTable();
-        }
+        if (currentPage < totalPages) { currentPage++; renderTable(); }
       });
 
       document.getElementById('btnDownloadTemplate').addEventListener('click', downloadTemplateFile);
@@ -665,53 +388,35 @@
         allRecords = JSON.parse(JSON.stringify(DEFAULT_RECORDS));
         populateFilterOptions();
         applyFilters();
-        const statusEl = document.getElementById('fileUploadStatus');
-        statusEl.textContent = 'Reset to sample enterprise dataset (' + allRecords.length + ' devices).';
-        statusEl.classList.remove('hidden');
       });
-    }
-
-    function handleFileSelect(e) {
-      if (e.target.files && e.target.files.length > 0) {
-        processExcelFile(e.target.files[0]);
-      }
     }
 
     function processExcelFile(file) {
       const reader = new FileReader();
-      const statusEl = document.getElementById('fileUploadStatus');
-
-      reader.onload = function(e) {
+      reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.SheetNames[0];
-          const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: '', raw: false });
-
-          if (!rows || rows.length === 0) {
-            alert('No records found in uploaded file.');
-            return;
-          }
-
+          const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: '', raw: false });
           const parsed = [];
           rows.forEach((row, i) => {
             const getVal = (candidates) => {
               for (const k of Object.keys(row)) {
                 const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
                 for (const c of candidates) {
-                  if (clean === c.toLowerCase().replace(/[^a-z0-9]/g, '')) {
-                    return String(row[k]).trim();
-                  }
+                  if (clean === c.toLowerCase().replace(/[^a-z0-9]/g, '')) return String(row[k]).trim();
                 }
               }
               return '';
             };
 
-            const customer = getVal(['Customer Name', 'Customer', 'Company Name', 'Company', 'Client']);
+            const customer = getVal(['Customer Name', 'Customer', 'Company Name', 'Company']);
             const oem = getVal(['OEM Brand', 'OEM', 'Vendor', 'Manufacturer']);
-            const model = getVal(['Device Type / Model', 'Device Model', 'Model', 'Device Type']);
+            const model = getVal(['Device Type / Model', 'Device Model', 'Model']);
             const serial = getVal(['Device Serial Number / Hostname', 'Serial Number', 'Serial', 'Hostname']);
             const rawStatus = getVal(['Status', 'State']);
+            const startDate = getVal(['Start Date', 'Deployment Start', 'Contract Start', 'Install Date']);
+            const endDate = getVal(['End Date', 'Contract End', 'Warranty Expiry', 'Warranty Expiration']);
             const industry = getVal(['Industry / Sector', 'Industry', 'Sector']) || 'Enterprise';
             const location = getVal(['Location', 'Site', 'Data Center']);
 
@@ -719,45 +424,41 @@
 
             let status = 'Active';
             if (rawStatus.toLowerCase().includes('maint')) status = 'Maintenance';
-            if (rawStatus.toLowerCase().includes('retir') || rawStatus.toLowerCase().includes('decom')) status = 'Retired';
+            if (rawStatus.toLowerCase().includes('retir')) status = 'Retired';
 
             parsed.push({
-              id: 'file-' + i + '-' + Math.random().toString(36).substr(2, 4),
+              id: 'file-' + i,
               customerName: customer || 'Unknown Client',
               industry: industry,
               oemBrand: oem || 'Other OEM',
               deviceModel: model || 'Standard Appliance',
               serialNumber: serial || 'SN-' + (100000 + i),
               status: status,
+              startDate: startDate || '',
+              endDate: endDate || '',
               location: location || ''
             });
           });
 
-          if (parsed.length > 0) {
+          if (parsed.length) {
             allRecords = parsed;
             currentPage = 1;
             populateFilterOptions();
             applyFilters();
-            statusEl.textContent = 'Successfully loaded ' + parsed.length + ' records from "' + file.name + '"';
+            const statusEl = document.getElementById('fileUploadStatus');
+            statusEl.textContent = 'Successfully loaded ' + parsed.length + ' records from ' + file.name;
             statusEl.classList.remove('hidden');
-          } else {
-            alert('Could not match expected columns in the spreadsheet.');
           }
-        } catch (err) {
-          alert('Error parsing Excel: ' + err.message);
-        }
+        } catch (err) { alert('Error parsing spreadsheet: ' + err.message); }
       };
-
       reader.readAsArrayBuffer(file);
     }
 
     function populateFilterOptions() {
       const oemSelect = document.getElementById('filterOem');
       const indSelect = document.getElementById('filterIndustry');
-
       const oems = Array.from(new Set(allRecords.map(r => r.oemBrand))).sort();
       const industries = Array.from(new Set(allRecords.map(r => r.industry))).sort();
-
       oemSelect.innerHTML = '<option value="">All OEMs</option>' + oems.map(o => '<option value="' + o + '">' + o + '</option>').join('');
       indSelect.innerHTML = '<option value="">All Industries</option>' + industries.map(i => '<option value="' + i + '">' + i + '</option>').join('');
     }
@@ -773,17 +474,17 @@
         if (statusVal && r.status !== statusVal) return false;
         if (indVal && r.industry !== indVal) return false;
         if (q) {
-          const match = r.customerName.toLowerCase().includes(q) ||
-                        r.oemBrand.toLowerCase().includes(q) ||
-                        r.deviceModel.toLowerCase().includes(q) ||
-                        r.serialNumber.toLowerCase().includes(q) ||
-                        r.industry.toLowerCase().includes(q);
-          if (!match) return false;
+          return r.customerName.toLowerCase().includes(q) || r.oemBrand.toLowerCase().includes(q) || r.deviceModel.toLowerCase().includes(q) || r.serialNumber.toLowerCase().includes(q);
         }
         return true;
       });
 
-      sortRecords();
+      filteredRecords.sort((a, b) => {
+        const valA = (a[sortField] || '').toLowerCase();
+        const valB = (b[sortField] || '').toLowerCase();
+        return (valA < valB ? -1 : 1) * (sortAsc ? 1 : -1);
+      });
+
       currentPage = 1;
       updateMetrics();
       updateCharts();
@@ -791,244 +492,110 @@
     }
 
     function toggleSort(field) {
-      if (sortField === field) {
-        sortAsc = !sortAsc;
-      } else {
-        sortField = field;
-        sortAsc = true;
-      }
-      sortRecords();
-      renderTable();
-    }
-
-    function sortRecords() {
-      filteredRecords.sort((a, b) => {
-        const valA = (a[sortField] || '').toLowerCase();
-        const valB = (b[sortField] || '').toLowerCase();
-        if (valA < valB) return sortAsc ? -1 : 1;
-        if (valA > valB) return sortAsc ? 1 : -1;
-        return 0;
-      });
+      if (sortField === field) sortAsc = !sortAsc;
+      else { sortField = field; sortAsc = true; }
+      applyFilters();
     }
 
     function updateMetrics() {
       const uniqueCustomers = new Set(filteredRecords.map(r => r.customerName)).size;
       const totalDevices = filteredRecords.length;
       const activeDevices = filteredRecords.filter(r => r.status === 'Active').length;
-
       const oemCounts = {};
-      filteredRecords.forEach(r => {
-        oemCounts[r.oemBrand] = (oemCounts[r.oemBrand] || 0) + 1;
-      });
+      filteredRecords.forEach(r => { oemCounts[r.oemBrand] = (oemCounts[r.oemBrand] || 0) + 1; });
 
-      let topOem = '-';
-      let topOemCount = 0;
+      let topOem = '-', topOemCount = 0;
       for (const [oem, count] of Object.entries(oemCounts)) {
-        if (count > topOemCount) {
-          topOem = oem;
-          topOemCount = count;
-        }
+        if (count > topOemCount) { topOem = oem; topOemCount = count; }
       }
-
-      const topOemPct = totalDevices > 0 ? Math.round((topOemCount / totalDevices) * 100) : 0;
-      const activePct = totalDevices > 0 ? Math.round((activeDevices / totalDevices) * 100) : 0;
 
       document.getElementById('metricTotalCustomers').textContent = uniqueCustomers;
       document.getElementById('metricTotalDevices').textContent = totalDevices;
       document.getElementById('metricTopOem').textContent = topOem;
-      document.getElementById('metricTopOemSub').textContent = topOemPct + '% of current fleet (' + topOemCount + ')';
+      document.getElementById('metricTopOemSub').textContent = totalDevices ? Math.round((topOemCount / totalDevices) * 100) + '% of fleet' : '0%';
       document.getElementById('metricActiveDeployments').textContent = activeDevices;
-      document.getElementById('metricActiveRate').textContent = activePct + '% operational rate';
-
+      document.getElementById('metricActiveRate').textContent = totalDevices ? Math.round((activeDevices / totalDevices) * 100) + '% operational' : '0%';
       document.getElementById('filteredCountText').textContent = filteredRecords.length + ' of ' + allRecords.length + ' items';
     }
 
     function updateCharts() {
-      const oemCounts = {};
-      const customerByOem = {};
-
+      const oemCounts = {}, customerByOem = {};
       filteredRecords.forEach(r => {
         oemCounts[r.oemBrand] = (oemCounts[r.oemBrand] || 0) + 1;
-        if (!customerByOem[r.oemBrand]) {
-          customerByOem[r.oemBrand] = new Set();
-        }
+        if (!customerByOem[r.oemBrand]) customerByOem[r.oemBrand] = new Set();
         customerByOem[r.oemBrand].add(r.customerName);
       });
 
       const oemLabels = Object.keys(oemCounts).sort((a, b) => oemCounts[b] - oemCounts[a]);
-      const oemDeviceData = oemLabels.map(l => oemCounts[l]);
-      const customerCountsData = oemLabels.map(l => customerByOem[l] ? customerByOem[l].size : 0);
-      const backgroundColors = oemLabels.map(l => getOemColor(l));
+      const colors = oemLabels.map(l => getOemColor(l));
 
       if (chartOemInstance) chartOemInstance.destroy();
-      if (chartCustomerInstance) chartCustomerInstance.destroy();
-
-      const ctxOem = document.getElementById('chartOemBreakdown').getContext('2d');
-      chartOemInstance = new Chart(ctxOem, {
+      chartOemInstance = new Chart(document.getElementById('chartOemBreakdown'), {
         type: 'doughnut',
-        data: {
-          labels: oemLabels,
-          datasets: [{
-            data: oemDeviceData,
-            backgroundColor: backgroundColors,
-            borderWidth: 2,
-            borderColor: '#ffffff'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: { boxWidth: 12, font: { size: 11 } }
-            }
-          },
-          cutout: '65%'
-        }
+        data: { labels: oemLabels, datasets: [{ data: oemLabels.map(l => oemCounts[l]), backgroundColor: colors, borderWidth: 2 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '65%' }
       });
 
-      const ctxCustomer = document.getElementById('chartCustomerOem').getContext('2d');
-      chartCustomerInstance = new Chart(ctxCustomer, {
+      if (chartCustomerInstance) chartCustomerInstance.destroy();
+      chartCustomerInstance = new Chart(document.getElementById('chartCustomerOem'), {
         type: 'bar',
-        data: {
-          labels: oemLabels,
-          datasets: [{
-            label: 'Unique Customers Using OEM',
-            data: customerCountsData,
-            backgroundColor: backgroundColors,
-            borderRadius: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { stepSize: 1, font: { size: 10 } }
-            },
-            x: {
-              ticks: { font: { size: 11 } }
-            }
-          },
-          plugins: {
-            legend: { display: false }
-          }
-        }
+        data: { labels: oemLabels, datasets: [{ label: 'Clients', data: oemLabels.map(l => customerByOem[l] ? customerByOem[l].size : 0), backgroundColor: colors }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
       });
     }
 
     function renderTable() {
       const tbody = document.getElementById('tableBody');
       const emptyState = document.getElementById('emptyState');
-
-      if (filteredRecords.length === 0) {
+      if (!filteredRecords.length) {
         tbody.innerHTML = '';
         emptyState.classList.remove('hidden');
         document.getElementById('paginationInfo').textContent = 'Showing 0 of 0';
-        document.getElementById('btnPrevPage').disabled = true;
-        document.getElementById('btnNextPage').disabled = true;
         return;
       }
-
       emptyState.classList.add('hidden');
 
-      const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = Math.min(startIndex + pageSize, filteredRecords.length);
-      const pageData = filteredRecords.slice(startIndex, endIndex);
+      const start = (currentPage - 1) * pageSize;
+      const end = Math.min(start + pageSize, filteredRecords.length);
+      const pageData = filteredRecords.slice(start, end);
 
-      let html = '';
-      pageData.forEach(r => {
-        let statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
-        if (r.status === 'Maintenance') statusColor = 'text-amber-700 bg-amber-50 border-amber-200';
-        if (r.status === 'Retired') statusColor = 'text-slate-600 bg-slate-100 border-slate-200';
-
-        html += '<tr class="hover:bg-slate-50/80 transition-colors">' +
-          '<td class="py-3 px-4 font-semibold text-slate-900">' + escapeHtml(r.customerName) + '</td>' +
-          '<td class="py-3 px-4 text-slate-600">' + escapeHtml(r.industry) + '</td>' +
-          '<td class="py-3 px-4 font-medium" style="color: ' + getOemColor(r.oemBrand) + '">' + escapeHtml(r.oemBrand) + '</td>' +
-          '<td class="py-3 px-4 text-slate-800">' + escapeHtml(r.deviceModel) + '</td>' +
-          '<td class="py-3 px-4 font-mono text-slate-500 text-[11px]">' + escapeHtml(r.serialNumber) + '</td>' +
-          '<td class="py-3 px-4">' +
-            '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ' + statusColor + '">' +
-              r.status +
-            '</span>' +
-          '</td>' +
-          '<td class="py-3 px-4 text-right text-slate-500 text-[11px]">' + escapeHtml(r.location || '—') + '</td>' +
+      tbody.innerHTML = pageData.map(r => {
+        const statusColor = r.status === 'Active' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : r.status === 'Maintenance' ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-slate-600 bg-slate-100 border-slate-200';
+        return '<tr class="hover:bg-slate-50 transition-colors">' +
+          '<td class="py-3 px-4 font-semibold text-slate-900">' + r.customerName + '</td>' +
+          '<td class="py-3 px-4 text-slate-600">' + r.industry + '</td>' +
+          '<td class="py-3 px-4 font-medium" style="color:' + getOemColor(r.oemBrand) + '">' + r.oemBrand + '</td>' +
+          '<td class="py-3 px-4 text-slate-800">' + r.deviceModel + '</td>' +
+          '<td class="py-3 px-4 font-mono text-slate-500 text-[11px]">' + r.serialNumber + '</td>' +
+          '<td class="py-3 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ' + statusColor + '">' + r.status + '</span></td>' +
+          '<td class="py-3 px-4 font-mono text-slate-600 text-[11px] whitespace-nowrap">' + (r.startDate || '—') + '</td>' +
+          '<td class="py-3 px-4 font-mono text-slate-600 text-[11px] whitespace-nowrap">' + (r.endDate || '—') + '</td>' +
+          '<td class="py-3 px-4 text-right text-slate-500 text-[11px]">' + (r.location || '—') + '</td>' +
         '</tr>';
-      });
+      }).join('');
 
-      tbody.innerHTML = html;
-
-      document.getElementById('paginationInfo').textContent = 'Showing ' + (startIndex + 1) + ' to ' + endIndex + ' of ' + filteredRecords.length;
+      document.getElementById('paginationInfo').textContent = 'Showing ' + (start + 1) + ' to ' + end + ' of ' + filteredRecords.length;
       document.getElementById('btnPrevPage').disabled = currentPage <= 1;
-      document.getElementById('btnNextPage').disabled = endIndex >= filteredRecords.length;
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+      document.getElementById('btnNextPage').disabled = end >= filteredRecords.length;
     }
 
     function downloadTemplateFile() {
-      const template = [
-        {
-          'Customer Name': 'Apex Capital Partners',
-          'Industry / Sector': 'Financial Services',
-          'OEM Brand': 'Cisco',
-          'Device Type / Model': 'Catalyst 9300 48P Switch',
-          'Device Serial Number / Hostname': 'CSCO-9300-8812A',
-          'Status': 'Active',
-          'Location': 'NY DataCenter 4'
-        },
-        {
-          'Customer Name': 'Apex Capital Partners',
-          'Industry / Sector': 'Financial Services',
-          'OEM Brand': 'Palo Alto',
-          'Device Type / Model': 'PA-3260 Next-Gen Firewall',
-          'Device Serial Number / Hostname': 'PANW-3260-X0921',
-          'Status': 'Active',
-          'Location': 'NY DataCenter 4'
-        },
-        {
-          'Customer Name': 'AcroPoint Logistics',
-          'Industry / Sector': 'Supply Chain',
-          'OEM Brand': 'Dell',
-          'Device Type / Model': 'PowerEdge R750 Server',
-          'Device Serial Number / Hostname': 'DELL-R750-NV914',
-          'Status': 'Active',
-          'Location': 'Chicago Hub'
-        }
-      ];
-
-      const ws = XLSX.utils.json_to_sheet(template);
-      ws['!cols'] = [{ wch: 26 }, { wch: 22 }, { wch: 16 }, { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 22 }];
+      const ws = XLSX.utils.json_to_sheet([
+        { 'Customer Name': 'Apex Capital Partners', 'Industry / Sector': 'Financial Services', 'OEM Brand': 'Cisco', 'Device Type / Model': 'Catalyst 9300 48P', 'Device Serial Number / Hostname': 'CSCO-9300-8812A', 'Status': 'Active', 'Start Date': '2023-08-15', 'End Date': '2027-08-15', 'Location': 'NY DataCenter 4' },
+        { 'Customer Name': 'AcroPoint Logistics', 'Industry / Sector': 'Supply Chain', 'OEM Brand': 'Dell', 'Device Type / Model': 'PowerEdge R750', 'Device Serial Number / Hostname': 'DELL-R750-NV914', 'Status': 'Active', 'Start Date': '2023-02-10', 'End Date': '2028-02-10', 'Location': 'Chicago Hub' }
+      ]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Template');
       XLSX.writeFile(wb, 'customer_oem_template.xlsx');
     }
 
     function exportCurrentData() {
-      const exportList = filteredRecords.map(r => ({
-        'Customer Name': r.customerName,
-        'Industry / Sector': r.industry,
-        'OEM Brand': r.oemBrand,
-        'Device Type / Model': r.deviceModel,
-        'Device Serial Number / Hostname': r.serialNumber,
-        'Status': r.status,
-        'Location': r.location || ''
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(exportList);
-      ws['!cols'] = [{ wch: 26 }, { wch: 22 }, { wch: 16 }, { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 22 }];
+      const ws = XLSX.utils.json_to_sheet(filteredRecords.map(r => ({
+        'Customer Name': r.customerName, 'Industry / Sector': r.industry, 'OEM Brand': r.oemBrand, 'Device Type / Model': r.deviceModel, 'Device Serial Number / Hostname': r.serialNumber, 'Status': r.status, 'Start Date': r.startDate || '', 'End Date': r.endDate || '', 'Location': r.location || ''
+      })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
-      XLSX.writeFile(wb, 'customer_oem_export.xlsx');
+      XLSX.writeFile(wb, 'customer_oem_inventory.xlsx');
     }
 
     window.addEventListener('DOMContentLoaded', init);

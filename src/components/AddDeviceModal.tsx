@@ -25,6 +25,8 @@ export const AddDeviceModal: React.FC<AddDeviceModalProps> = ({
   const [deviceModel, setDeviceModel] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [status, setStatus] = useState<DeviceStatus>('Active');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [location, setLocation] = useState('');
 
   useEffect(() => {
@@ -35,6 +37,8 @@ export const AddDeviceModal: React.FC<AddDeviceModalProps> = ({
       setDeviceModel(editingRecord.deviceModel);
       setSerialNumber(editingRecord.serialNumber);
       setStatus(editingRecord.status);
+      setStartDate(editingRecord.startDate || '');
+      setEndDate(editingRecord.endDate || '');
       setLocation(editingRecord.location || '');
     } else {
       setCustomerName('');
@@ -43,6 +47,8 @@ export const AddDeviceModal: React.FC<AddDeviceModalProps> = ({
       setDeviceModel('');
       setSerialNumber('');
       setStatus('Active');
+      setStartDate(new Date().toISOString().split('T')[0]);
+      setEndDate('');
       setLocation('');
     }
   }, [editingRecord, isOpen]);
@@ -64,6 +70,8 @@ export const AddDeviceModal: React.FC<AddDeviceModalProps> = ({
       deviceModel: deviceModel.trim(),
       serialNumber: serialNumber.trim() || `SN-${Math.floor(100000 + Math.random() * 900000)}`,
       status,
+      startDate: startDate.trim() || undefined,
+      endDate: endDate.trim() || undefined,
       location: location.trim() || undefined,
     };
 
@@ -169,6 +177,30 @@ export const AddDeviceModal: React.FC<AddDeviceModalProps> = ({
                 onChange={(e) => setSerialNumber(e.target.value)}
                 placeholder="e.g. CSCO-9300-8812A"
                 className="w-full px-3 py-1.5 text-xs font-mono border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Start Date */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Start Date / Deployment</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white"
+              />
+            </div>
+
+            {/* End Date */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">End Date / Warranty Expiry</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white"
               />
             </div>
           </div>

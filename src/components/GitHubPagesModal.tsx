@@ -224,6 +224,18 @@ export const GitHubPagesModal: React.FC<GitHubPagesModalProps> = ({
                       <td className="py-2 px-3 text-slate-500 font-sans">Defaults to Active</td>
                     </tr>
                     <tr>
+                      <td className="py-2 px-3 font-semibold text-slate-900">Start Date</td>
+                      <td className="py-2 px-3 text-slate-500">Deployment Start, Contract Start, Install Date</td>
+                      <td className="py-2 px-3 text-slate-600">2023-08-15, 2024-01-20</td>
+                      <td className="py-2 px-3 text-slate-500 font-sans">Optional</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-semibold text-slate-900">End Date</td>
+                      <td className="py-2 px-3 text-slate-500">Contract End, Warranty Expiration, Expiry Date</td>
+                      <td className="py-2 px-3 text-slate-600">2027-08-15, 2028-11-30</td>
+                      <td className="py-2 px-3 text-slate-500 font-sans">Optional</td>
+                    </tr>
+                    <tr>
                       <td className="py-2 px-3 font-semibold text-slate-900">Location</td>
                       <td className="py-2 px-3 text-slate-500">Site, Data Center, Facility</td>
                       <td className="py-2 px-3 text-slate-600">NY Equinix NY4, Ashburn DC</td>

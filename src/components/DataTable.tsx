@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Printer,
 } from 'lucide-react';
 import { exportRecordsToExcel } from '../excelUtils';
 
@@ -232,6 +233,15 @@ export const DataTable: React.FC<DataTableProps> = ({
 
           {/* Action buttons */}
           <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-xs"
+            title="Print hardware inventory report"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-500" />
+            <span>Print</span>
+          </button>
+
+          <button
             onClick={() => exportRecordsToExcel(filteredRecords)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-xs"
             title="Export filtered table to Excel"
@@ -315,15 +325,35 @@ export const DataTable: React.FC<DataTableProps> = ({
                 </div>
               </th>
 
+              <th
+                onClick={() => handleSort('startDate')}
+                className="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors whitespace-nowrap"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Start Date</span>
+                  {getSortIcon('startDate')}
+                </div>
+              </th>
+
+              <th
+                onClick={() => handleSort('endDate')}
+                className="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors whitespace-nowrap"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>End Date</span>
+                  {getSortIcon('endDate')}
+                </div>
+              </th>
+
               <th className="py-3 px-4">Location / Site</th>
 
-              <th className="py-3 px-4 text-right">Actions</th>
+              <th className="py-3 px-4 text-right print:hidden">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-normal">
             {paginatedRecords.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center text-slate-500">
+                <td colSpan={10} className="py-12 text-center text-slate-500">
                   <p className="text-sm font-medium text-slate-700">No matching assets found</p>
                   <p className="text-xs text-slate-400 mt-1">Try relaxing filters or search terms.</p>
                 </td>
@@ -361,13 +391,23 @@ export const DataTable: React.FC<DataTableProps> = ({
                   {/* Status */}
                   <td className="py-3 px-4">{getStatusBadge(r.status)}</td>
 
+                  {/* Start Date */}
+                  <td className="py-3 px-4 text-slate-600 font-mono text-[11px] whitespace-nowrap">
+                    {r.startDate || '—'}
+                  </td>
+
+                  {/* End Date */}
+                  <td className="py-3 px-4 text-slate-600 font-mono text-[11px] whitespace-nowrap">
+                    {r.endDate || '—'}
+                  </td>
+
                   {/* Location */}
                   <td className="py-3 px-4 text-slate-500 text-[11px]">
                     {r.location ? <span>{r.location}</span> : <span className="text-slate-300">—</span>}
                   </td>
 
                   {/* Actions */}
-                  <td className="py-3 px-4 text-right">
+                  <td className="py-3 px-4 text-right print:hidden">
                     <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100">
                       <button
                         onClick={() => onEditDevice(r)}

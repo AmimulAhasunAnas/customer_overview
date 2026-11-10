@@ -16,6 +16,7 @@ import {
   Plus,
   Globe,
   FileSpreadsheet,
+  Printer,
 } from 'lucide-react';
 
 export default function App() {
@@ -125,6 +126,16 @@ export default function App() {
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500" />
               <span className="hidden md:inline">Download</span> Template
+            </button>
+
+            {/* Print Button */}
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-2xs"
+              title="Print full dashboard report"
+            >
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
+              <span>Print</span>
             </button>
 
             {/* GitHub Pages Modal trigger */}
