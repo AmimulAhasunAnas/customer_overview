@@ -1,0 +1,6 @@
+{
+  "name": "Customer OEM Asset Tracker",
+  "description": "Client-side dashboard for tracking enterprise customer hardware inventory, OEM device deployments, and lifecycle analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
