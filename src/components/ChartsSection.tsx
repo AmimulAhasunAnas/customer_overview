@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { CustomerDeviceRecord } from '../types';
 import { Chart, registerables } from 'chart.js';
 import { PieChart, BarChart3, Layers } from 'lucide-react';
+import { getOemBrandColor } from '../excelUtils';
 
 Chart.register(...registerables);
 
@@ -17,40 +18,6 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ records }) => {
   const customerChartInstance = useRef<Chart | null>(null);
 
   const [activeSecondaryView, setActiveSecondaryView] = useState<'customerCount' | 'lifecycle'>('customerCount');
-
-  // Defined professional OEM brand color palette specifically matching user OEMs
-  const getOemColor = (oem: string): string => {
-    if (!oem) return '#64748b';
-    const clean = oem.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-    // User's specific OEMs with official brand identities
-    if (clean.includes('cisco')) return '#0284c7'; // Cisco Blue
-    if (clean === 'f5' || clean.includes('f5networks') || clean.includes('f5')) return '#e11d48'; // F5 Ruby Red
-    if (clean.includes('checkpoint') || clean.includes('chkp')) return '#d946ef'; // Check Point Magenta
-    if (clean.includes('paloalto') || clean.includes('palo') || clean.includes('panw')) return '#f97316'; // Palo Alto Orange
-    if (clean.includes('fortinet') || clean.includes('forti')) return '#b91c1c'; // Fortinet Crimson Red
-    if (clean.includes('algosec') || clean.includes('algo')) return '#059669'; // AlgoSec Green / Teal
-
-    // Additional enterprise hardware & security OEMs
-    if (clean.includes('dell')) return '#2563eb'; // Dell Blue
-    if (clean.includes('hp') || clean.includes('hpe')) return '#0d9488'; // HP Teal
-    if (clean.includes('lenovo')) return '#dc2626'; // Lenovo Red
-    if (clean.includes('juniper')) return '#4f46e5'; // Juniper Indigo
-    if (clean.includes('arista')) return '#7c3aed'; // Arista Violet
-    if (clean.includes('vmware')) return '#16a34a'; // VMware Green
-    if (clean.includes('sophos')) return '#2563eb'; // Sophos Blue
-    if (clean.includes('crowdstrike')) return '#e11d48'; // Crowdstrike Red
-    if (clean.includes('zscaler')) return '#0369a1'; // Zscaler Blue
-
-    // Curated dynamic palette fallback so no OEM is ever dull gray
-    const curatedPalette = [
-      '#0284c7', '#e11d48', '#d946ef', '#f97316', '#b91c1c',
-      '#059669', '#7c3aed', '#4f46e5', '#0d9488', '#ea580c'
-    ];
-    let hash = 0;
-    for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
-    return curatedPalette[Math.abs(hash) % curatedPalette.length];
-  };
 
   useEffect(() => {
     // OEM Breakdown Data
@@ -70,7 +37,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ records }) => {
     const sortedOems = Object.keys(oemCounts).sort((a, b) => oemCounts[b] - oemCounts[a]);
     const donutLabels = sortedOems;
     const donutData = sortedOems.map((o) => oemCounts[o]);
-    const donutColors = sortedOems.map((o) => getOemColor(o));
+    const donutColors = sortedOems.map((o) => getOemBrandColor(o));
 
     // Destroy existing donut chart
     if (oemChartInstance.current) {
@@ -136,7 +103,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ records }) => {
         if (activeSecondaryView === 'customerCount') {
           const barLabels = sortedOems;
           const barData = sortedOems.map((o) => (customerByOem[o] ? customerByOem[o].size : 0));
-          const barColors = sortedOems.map((o) => getOemColor(o));
+          const barColors = sortedOems.map((o) => getOemBrandColor(o));
 
           customerChartInstance.current = new Chart(ctx, {
             type: 'bar',
