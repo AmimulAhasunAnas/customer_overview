@@ -254,14 +254,14 @@ export const GitHubPagesModal: React.FC<GitHubPagesModalProps> = ({
                       <td className="py-2 px-3 text-slate-600">Active, Maintenance, Retired</td>
                     </tr>
                     <tr>
-                      <td className="py-2 px-3 font-semibold text-slate-900">Start Date</td>
-                      <td className="py-2 px-3 text-slate-500">Deployment Start, Install Date, Start</td>
-                      <td className="py-2 px-3 text-slate-600">2023-08-15</td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">AMC Start Date</td>
+                      <td className="py-2 px-3 text-slate-500">Start Date, AMC Start, Deployment Start</td>
+                      <td className="py-2 px-3 text-emerald-700 font-semibold">01-Jul-24, 01-Oct-25</td>
                     </tr>
                     <tr>
-                      <td className="py-2 px-3 font-semibold text-slate-900">End Date</td>
-                      <td className="py-2 px-3 text-slate-500">Warranty Expiration, Contract End, Expiry</td>
-                      <td className="py-2 px-3 text-slate-600">2027-08-15</td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">AMC End Date</td>
+                      <td className="py-2 px-3 text-slate-500">End Date, AMC End, Warranty Expiry</td>
+                      <td className="py-2 px-3 text-emerald-700 font-semibold">30-Sep-27, 31-Dec-26</td>
                     </tr>
                   </tbody>
                 </table>

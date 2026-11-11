@@ -39,6 +39,60 @@ export function getOemBrandColor(oem: string): string {
 }
 
 /**
+ * Normalizes any incoming date from Excel, Google Sheets, or CSV
+ * Handles formats like "01-Jul-24", "30-Sep-27", ISO dates, and Excel numeric serials.
+ */
+export function formatRawDate(val: unknown): string {
+  if (val === undefined || val === null) return '';
+
+  // If Date object
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = String(val.getDate()).padStart(2, '0');
+    const month = months[val.getMonth()];
+    const year = String(val.getFullYear()).slice(-2);
+    return `${day}-${month}-${year}`;
+  }
+
+  // If Excel numeric serial date (e.g. 45474 for 01-Jul-2024)
+  if (typeof val === 'number' && !isNaN(val) && val > 30000 && val < 65000) {
+    const utc_days = Math.floor(val - 25569);
+    const date = new Date(utc_days * 86400 * 1000);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = months[date.getUTCMonth()];
+    const year = String(date.getUTCFullYear()).slice(-2);
+    return `${day}-${month}-${year}`;
+  }
+
+  const str = String(val).trim();
+  if (!str) return '';
+
+  // Match "01-Jul-24" or "01-Jul-2024" or "1-Jul-24" or "01/Jul/24"
+  const dmyMatch = str.match(/^([0-9]{1,2})[-/ ]([a-zA-Z]{3,9})[-/ ]([0-9]{2,4})$/);
+  if (dmyMatch) {
+    const day = dmyMatch[1].padStart(2, '0');
+    const month = dmyMatch[2].charAt(0).toUpperCase() + dmyMatch[2].slice(1, 3).toLowerCase();
+    const year = dmyMatch[3].length === 4 ? dmyMatch[3].slice(-2) : dmyMatch[3];
+    return `${day}-${month}-${year}`;
+  }
+
+  // Match ISO date "2024-07-01" or "2024/07/01"
+  const isoMatch = str.match(/^([0-9]{4})[-/]([0-9]{1,2})[-/]([0-9]{1,2})/);
+  if (isoMatch) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const y = isoMatch[1].slice(-2);
+    const m = parseInt(isoMatch[2], 10) - 1;
+    const d = isoMatch[3].padStart(2, '0');
+    if (m >= 0 && m < 12) {
+      return `${d}-${months[m]}-${y}`;
+    }
+  }
+
+  return str;
+}
+
+/**
  * Normalizes headers and maps raw sheet objects into typed CustomerDeviceRecord items.
  */
 export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
@@ -47,7 +101,7 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
 } {
   const errors: string[] = [];
   try {
-    const workbook = XLSX.read(dataBuffer, { type: 'array' });
+    const workbook = XLSX.read(dataBuffer, { type: 'array', cellDates: true });
     const firstSheetName = workbook.SheetNames[0];
     if (!firstSheetName) {
       return { records: [], errors: ['Excel file contains no sheets.'] };
@@ -64,7 +118,7 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
     }
 
     // Helper to find a value using multiple potential header names
-    const getField = (row: Record<string, unknown>, candidateKeys: string[]): string => {
+    const getField = (row: Record<string, unknown>, candidateKeys: string[]): unknown => {
       const normalizedRowKeys = Object.keys(row).map((k) => ({
         original: k,
         clean: k.toLowerCase().replace(/[^a-z0-9]/g, ''),
@@ -73,8 +127,8 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
       for (const candidate of candidateKeys) {
         const cleanCandidate = candidate.toLowerCase().replace(/[^a-z0-9]/g, '');
         const match = normalizedRowKeys.find((nk) => nk.clean === cleanCandidate);
-        if (match && row[match.original] !== undefined && row[match.original] !== null) {
-          return String(row[match.original]).trim();
+        if (match && row[match.original] !== undefined && row[match.original] !== null && String(row[match.original]).trim() !== '') {
+          return row[match.original];
         }
       }
       return '';
@@ -83,7 +137,9 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
     const parsedRecords: CustomerDeviceRecord[] = [];
 
     rawRows.forEach((row, index) => {
-      const customerName = getField(row, [
+      const sl = String(getField(row, ['SL', 'S/L', 'Serial No', 'Sl No', 'No', '#'])).trim();
+
+      const customerName = String(getField(row, [
         'Customer Name',
         'Customer',
         'Company Name',
@@ -93,9 +149,9 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
         'Account Name',
         'Account',
         'Organization',
-      ]);
+      ])).trim();
 
-      const oemBrand = getField(row, [
+      const oemBrand = String(getField(row, [
         'OEM Brand',
         'OEM',
         'Vendor',
@@ -106,9 +162,9 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
         'Make',
         'OEM Provider',
         'OEM Name',
-      ]);
+      ])).trim();
 
-      const deviceModel = getField(row, [
+      const deviceModel = String(getField(row, [
         'Device Type / Model',
         'Device Model',
         'Model',
@@ -117,9 +173,9 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
         'Product',
         'Equipment',
         'Appliance',
-      ]);
+      ])).trim();
 
-      const serialNumber = getField(row, [
+      const serialNumber = String(getField(row, [
         'Device Serial Number / Hostname',
         'Device Serial Number',
         'Serial Number',
@@ -130,12 +186,18 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
         'Asset Tag',
         'Serial #',
         'Serial No',
-      ]);
+      ])).trim();
 
-      const rawStatus = getField(row, ['Status', 'State', 'Lifecycle Status', 'Condition', 'Device Status']);
-      const industry = getField(row, ['Industry / Sector', 'Industry', 'Sector', 'Vertical', 'Category']) || 'General Enterprise';
-      const location = getField(row, ['Location', 'Site', 'Data Center', 'Facility', 'Region', 'Office', 'Branch']);
-      const startDate = getField(row, [
+      const rawStatus = String(getField(row, ['Status', 'State', 'Lifecycle Status', 'Condition', 'Device Status'])).trim();
+      const industry = String(getField(row, ['Industry / Sector', 'Industry', 'Sector', 'Vertical', 'Category'])).trim() || 'Enterprise';
+
+      // Start Date Candidates: specifically including AMC Start Date
+      const startDateCandidates = [
+        'AMC Start Date',
+        'AMC Start',
+        'AMC StartDate',
+        'AMC_Start_Date',
+        'AMC Date',
         'Start Date',
         'Deployment Start',
         'Contract Start',
@@ -144,8 +206,18 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
         'Start',
         'Installation Date',
         'Deployment Date',
-      ]);
-      const endDate = getField(row, [
+        'From Date',
+      ];
+
+      // End Date Candidates: specifically including AMC End Date
+      const endDateCandidates = [
+        'AMC End Date',
+        'AMC End',
+        'AMC EndDate',
+        'AMC_End_Date',
+        'AMC Expiry',
+        'AMC Expiry Date',
+        'AMC Expiration Date',
         'End Date',
         'Contract End',
         'Warranty Expiration',
@@ -154,12 +226,41 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
         'Warranty End',
         'End Date / Expiry',
         'End',
+        'To Date',
         'Expiration Date',
         'Renewal Date',
-      ]);
+      ];
+
+      let rawStartDate = getField(row, startDateCandidates);
+      let rawEndDate = getField(row, endDateCandidates);
+
+      // Fuzzy fallback for Start Date if not matched
+      if (!rawStartDate) {
+        for (const k of Object.keys(row)) {
+          const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if ((clean.includes('start') || clean.includes('from')) && (clean.includes('amc') || clean.includes('date') || clean.includes('contract'))) {
+            rawStartDate = row[k];
+            break;
+          }
+        }
+      }
+
+      // Fuzzy fallback for End Date if not matched
+      if (!rawEndDate) {
+        for (const k of Object.keys(row)) {
+          const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if ((clean.includes('end') || clean.includes('expir') || clean.includes('valid') || clean.includes('to')) && (clean.includes('amc') || clean.includes('date') || clean.includes('contract'))) {
+            rawEndDate = row[k];
+            break;
+          }
+        }
+      }
+
+      const startDate = formatRawDate(rawStartDate);
+      const endDate = formatRawDate(rawEndDate);
 
       // Skip completely blank rows
-      if (!customerName && !oemBrand && !deviceModel && !serialNumber) {
+      if (!customerName && !oemBrand && !startDate && !endDate) {
         return;
       }
 
@@ -172,17 +273,20 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
         status = 'Retired';
       }
 
+      // If serial number is missing but SL is present
+      const displaySerial = serialNumber || (sl ? `SL #${sl}` : `SN-${100000 + index}`);
+      const displayModel = deviceModel || (oemBrand ? `${oemBrand} Hardware` : 'AMC Appliance');
+
       parsedRecords.push({
         id: `rec-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
         customerName: customerName || 'Unknown Customer',
         industry: industry || 'Enterprise',
         oemBrand: oemBrand || 'Generic OEM',
-        deviceModel: deviceModel || 'Standard Hardware',
-        serialNumber: serialNumber || `SN-${Math.floor(100000 + Math.random() * 900000)}`,
+        deviceModel: displayModel,
+        serialNumber: displaySerial,
         status,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-        location: location || undefined,
         warrantyExpiry: endDate || undefined,
       });
     });
@@ -195,135 +299,112 @@ export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
 }
 
 /**
- * Downloads a pre-formatted Excel template for the user.
+ * Downloads a pre-formatted Excel template for the user matching their AMC structure.
  */
 export function downloadSampleTemplate(): void {
   const templateRows = [
     {
-      'Customer Name': 'Apex Capital Partners',
-      'Industry / Sector': 'Financial Services',
-      'OEM Brand': 'Cisco',
-      'Device Type / Model': 'Catalyst 9300 48P Switch',
-      'Device Serial Number / Hostname': 'CSCO-9300-8812A',
-      'Status': 'Active',
-      'Start Date': '2023-08-15',
-      'End Date': '2027-08-15',
-      'Location': 'NY-Primary DC (Equinix NY4)',
+      'SL': 1,
+      'Customer Name': 'Standard Chartered Bank',
+      'OEM': 'Cisco',
+      'AMC Start Date': '01-Jul-24',
+      'AMC End Date': '30-Sep-27',
     },
     {
-      'Customer Name': 'Apex Capital Partners',
-      'Industry / Sector': 'Financial Services',
-      'OEM Brand': 'F5',
-      'Device Type / Model': 'BIG-IP i5800 ADC Appliance',
-      'Device Serial Number / Hostname': 'F5-BIGIP-9901X',
-      'Status': 'Active',
-      'Start Date': '2023-01-20',
-      'End Date': '2026-01-20',
-      'Location': 'NY-Primary DC (Equinix NY4)',
+      'SL': 2,
+      'Customer Name': 'Standard Chartered Bank',
+      'OEM': 'Cisco',
+      'AMC Start Date': '01-Apr-25',
+      'AMC End Date': '30-Sep-27',
     },
     {
-      'Customer Name': 'AcroPoint Global Logistics',
-      'Industry / Sector': 'Supply Chain & Freight',
-      'OEM Brand': 'Palo Alto',
-      'Device Type / Model': 'PA-3260 Next-Gen Firewall',
-      'Device Serial Number / Hostname': 'PANW-3260-X0921',
-      'Status': 'Active',
-      'Start Date': '2022-11-30',
-      'End Date': '2026-11-30',
-      'Location': 'Chicago Hub (ORD-01)',
+      'SL': 3,
+      'Customer Name': 'UCBL',
+      'OEM': 'Checkpoint',
+      'AMC Start Date': '01-Oct-25',
+      'AMC End Date': '30-Sep-26',
     },
     {
-      'Customer Name': 'AcroPoint Global Logistics',
-      'Industry / Sector': 'Supply Chain & Freight',
-      'OEM Brand': 'Checkpoint',
-      'Device Type / Model': 'Quantum 6200 Security Gateway',
-      'Device Serial Number / Hostname': 'CHKP-6200-Z4419',
-      'Status': 'Active',
-      'Start Date': '2022-04-12',
-      'End Date': '2026-04-12',
-      'Location': 'Chicago Hub (ORD-01)',
+      'SL': 4,
+      'Customer Name': 'UCBL',
+      'OEM': 'Algosec',
+      'AMC Start Date': '01-Oct-25',
+      'AMC End Date': '30-Sep-26',
     },
     {
-      'Customer Name': 'Zenith Health Systems',
-      'Industry / Sector': 'Healthcare',
-      'OEM Brand': 'FortiNet',
-      'Device Type / Model': 'FortiGate 200F NGFW',
-      'Device Serial Number / Hostname': 'FG-200F-H8821',
-      'Status': 'Maintenance',
-      'Start Date': '2021-09-14',
-      'End Date': '2025-09-14',
-      'Location': 'Boston Clinical HQ',
+      'SL': 5,
+      'Customer Name': 'CDBL',
+      'OEM': 'F5',
+      'AMC Start Date': '01-Jan-26',
+      'AMC End Date': '31-Dec-26',
     },
     {
-      'Customer Name': 'Zenith Health Systems',
-      'Industry / Sector': 'Healthcare',
-      'OEM Brand': 'Algosec',
-      'Device Type / Model': 'AlgoSec Security Management Suite',
-      'Device Serial Number / Hostname': 'ALGO-SMS-V332',
-      'Status': 'Active',
-      'Start Date': '2023-05-18',
-      'End Date': '2026-05-18',
-      'Location': 'Boston Clinical HQ',
+      'SL': 6,
+      'Customer Name': 'CAL Securities Limited',
+      'OEM': 'FortiNet',
+      'AMC Start Date': '29-Dec-25',
+      'AMC End Date': '28-Dec-28',
+    },
+    {
+      'SL': 7,
+      'Customer Name': 'AB Bank PLC',
+      'OEM': 'PaloAlto',
+      'AMC Start Date': '24-Dec-25',
+      'AMC End Date': '23-Dec-27',
     },
   ];
 
   const worksheet = XLSX.utils.json_to_sheet(templateRows);
 
   worksheet['!cols'] = [
-    { wch: 28 }, // Customer Name
-    { wch: 24 }, // Industry
-    { wch: 16 }, // OEM Brand
-    { wch: 32 }, // Device Model
-    { wch: 30 }, // Serial Number
-    { wch: 14 }, // Status
-    { wch: 14 }, // Start Date
-    { wch: 14 }, // End Date
-    { wch: 30 }, // Location
+    { wch: 8 },  // SL
+    { wch: 32 }, // Customer Name
+    { wch: 18 }, // OEM
+    { wch: 18 }, // AMC Start Date
+    { wch: 18 }, // AMC End Date
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Customer_OEM_Assets');
-  XLSX.writeFile(workbook, 'customer_oem_template.xlsx');
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'AMC_List');
+  XLSX.writeFile(workbook, 'AMC_List_Template.xlsx');
 }
 
 /**
- * Exports current records to an Excel file.
+ * Exports current records to an Excel file (without Location column).
  */
 export function exportRecordsToExcel(records: CustomerDeviceRecord[], filename = 'customer_oem_inventory.xlsx'): void {
-  const exportRows = records.map((r) => ({
+  const exportRows = records.map((r, idx) => ({
+    'SL': idx + 1,
     'Customer Name': r.customerName,
-    'Industry / Sector': r.industry,
-    'OEM Brand': r.oemBrand,
-    'Device Type / Model': r.deviceModel,
-    'Device Serial Number / Hostname': r.serialNumber,
+    'OEM': r.oemBrand,
+    'Device Model': r.deviceModel,
+    'Serial Number / Hostname': r.serialNumber,
     'Status': r.status,
-    'Start Date': r.startDate || '',
-    'End Date': r.endDate || '',
-    'Location': r.location || '',
+    'AMC Start Date': r.startDate || '',
+    'AMC End Date': r.endDate || '',
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(exportRows);
   worksheet['!cols'] = [
-    { wch: 28 },
-    { wch: 24 },
-    { wch: 16 },
-    { wch: 32 },
-    { wch: 30 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 30 },
+    { wch: 8 },  // SL
+    { wch: 32 }, // Customer Name
+    { wch: 16 }, // OEM
+    { wch: 28 }, // Device Model
+    { wch: 24 }, // Serial Number
+    { wch: 14 }, // Status
+    { wch: 16 }, // AMC Start Date
+    { wch: 16 }, // AMC End Date
   ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Assets');
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'AMC_List');
   XLSX.writeFile(workbook, filename);
 }
 
 /**
  * Returns the standalone single-file index.html string ready for GitHub Pages.
- * Includes Google Sheets live real-time sync with read permission, Excel upload,
- * Start Date, End Date, print button, and vibrant OEM brand colors.
+ * Includes AMC Start Date, AMC End Date parsing, Location column removed,
+ * real-time Google Sheets sync, Excel upload, print option, and vibrant OEM brand colors.
  */
 export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[]): string {
   const dataset = currentRecords && currentRecords.length > 0 ? currentRecords : SAMPLE_RECORDS;
@@ -335,7 +416,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Customer OEM Asset Tracker - GitHub Pages</title>
-  <meta name="description" content="Client-side enterprise dashboard tracking customer hardware inventory and OEM vendor deployments with real-time Google Sheets sync.">
+  <meta name="description" content="Client-side enterprise dashboard tracking customer AMC inventory and OEM vendor deployments with real-time Google Sheets sync.">
 
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -387,7 +468,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
         border-collapse: collapse !important;
       }
       th, td {
-        padding: 5px 8px !important;
+        padding: 6px 10px !important;
         border: 1px solid #cbd5e1 !important;
       }
     }
@@ -411,7 +492,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
               Live Ready
             </span>
           </div>
-          <p class="text-xs text-slate-500">Track client accounts, OEM vendors &amp; real-time hardware deployments</p>
+          <p class="text-xs text-slate-500">Track client accounts, OEM vendors &amp; real-time AMC contract deployments</p>
         </div>
       </div>
 
@@ -486,7 +567,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
             <div>
               <h2 class="text-sm font-bold text-slate-900">Connect Google Sheet with Read Permission</h2>
               <p class="text-xs text-slate-500 mt-0.5">
-                Paste your Google Sheet link (<span class="font-medium text-slate-700">Anyone with the link can view</span>). Live changes made in Google Sheets sync directly into your dashboard!
+                Paste your Google Sheet link (<span class="font-medium text-slate-700">Anyone with the link can view</span>). Supports AMC Start Date and AMC End Date formats (e.g. <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-[11px]">01-Jul-24</code>, <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-[11px]">30-Sep-27</code>).
               </p>
             </div>
           </div>
@@ -533,7 +614,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
             </div>
             <div>
               <h2 class="text-sm font-semibold text-slate-900">Upload Excel Spreadsheet</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Drag and drop an Excel (.xlsx, .xls) or CSV file. 100% client-side parsing via SheetJS.</p>
+              <p class="text-xs text-slate-500 mt-0.5">Drag and drop an Excel (.xlsx, .xls) or CSV file. Parses AMC Start Date, AMC End Date, Customer Name, and OEM.</p>
               <div id="excelUploadStatus" class="mt-2 text-xs text-emerald-600 font-medium hidden"></div>
             </div>
           </div>
@@ -554,15 +635,15 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
         <p class="text-xs font-medium text-slate-500">Total Customers</p>
         <div class="mt-2 flex items-baseline justify-between">
           <span id="metricTotalCustomers" class="text-2xl font-bold text-slate-900">0</span>
-          <span class="text-xs text-slate-500">Enterprise accounts</span>
+          <span class="text-xs text-slate-500">Client accounts</span>
         </div>
       </div>
 
       <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-        <p class="text-xs font-medium text-slate-500">Total Tracked Devices</p>
+        <p class="text-xs font-medium text-slate-500">Total AMC Contracts</p>
         <div class="mt-2 flex items-baseline justify-between">
           <span id="metricTotalDevices" class="text-2xl font-bold text-slate-900">0</span>
-          <span class="text-xs text-slate-500">Hardware assets</span>
+          <span class="text-xs text-slate-500">Active contracts</span>
         </div>
       </div>
 
@@ -613,7 +694,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
       </div>
     </section>
 
-    <!-- Filter & Management Controls + Data Table -->
+    <!-- Filter & Management Controls + Data Table (Location Column Removed) -->
     <section class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
       <div class="p-4 border-b border-slate-200 bg-slate-50/75 flex flex-wrap items-center justify-between gap-3">
         <!-- Search -->
@@ -624,7 +705,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
           <input
             type="text"
             id="searchInput"
-            placeholder="Search customer, OEM, model, serial, dates..."
+            placeholder="Search customer, OEM, dates..."
             class="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
           />
           <button id="clearSearchBtn" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 hidden text-xs font-bold">&times;</button>
@@ -643,17 +724,13 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
             <option value="Retired">Retired</option>
           </select>
 
-          <select id="filterIndustry" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500">
-            <option value="">All Industries</option>
-          </select>
-
           <div class="h-5 w-px bg-slate-200 mx-1"></div>
 
           <span id="filteredCountText" class="text-xs text-slate-500 font-medium">0 items</span>
         </div>
       </div>
 
-      <!-- Data Table with Start Date and End Date -->
+      <!-- Data Table with Start Date and End Date (No Location) -->
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
@@ -661,12 +738,6 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
               <th id="thCustomer" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">
                 <div class="flex items-center gap-1">
                   <span>Customer / Company</span>
-                  <span class="sort-icon text-slate-400">↕</span>
-                </div>
-              </th>
-              <th id="thIndustry" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">
-                <div class="flex items-center gap-1">
-                  <span>Industry</span>
                   <span class="sort-icon text-slate-400">↕</span>
                 </div>
               </th>
@@ -701,7 +772,6 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
                   <span class="sort-icon text-slate-400">↕</span>
                 </div>
               </th>
-              <th class="py-3 px-4 text-right">Location</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-100 font-normal">
@@ -758,7 +828,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
           <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0">1</div>
           <div>
             <p class="font-semibold text-slate-900">Open your Google Sheet</p>
-            <p class="text-slate-500 mt-0.5">Open the Google spreadsheet (or Excel uploaded to Drive) in your web browser.</p>
+            <p class="text-slate-500 mt-0.5">Open your AMC spreadsheet in your web browser.</p>
           </div>
         </div>
 
@@ -778,7 +848,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
           <div>
             <p class="font-semibold text-slate-900">Paste Link or Save in Code</p>
             <p class="text-slate-500 mt-0.5">
-              Paste the link into the dashboard input and click <strong>Connect &amp; Live Sync</strong>. The app remembers your link and syncs live updates directly in the browser!
+              Paste the link into the dashboard input and click <strong>Connect &amp; Live Sync</strong>. The app automatically recognizes <strong>AMC Start Date</strong> and <strong>AMC End Date</strong>!
             </p>
           </div>
         </div>
@@ -801,7 +871,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
   <footer class="bg-white border-t border-slate-200 py-4 mt-8">
     <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
       <p>Customer OEM Tracker &bull; Standalone Single-Page Application for GitHub Pages</p>
-      <p>Supports Real-Time Google Sheets Sync + SheetJS Client-Side Upload</p>
+      <p>Real-Time Google Sheets Sync + SheetJS Client-Side Upload</p>
     </div>
   </footer>
 
@@ -810,7 +880,6 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
     // =========================================================================
     // 🔗 GOOGLE SHEET REAL-TIME CONFIGURATION
     // Paste your Google Sheet Share Link below (with "Anyone with the link can view")
-    // Example: "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit?usp=sharing"
     // =========================================================================
     const DEFAULT_GOOGLE_SHEET_URL = "";
 
@@ -830,6 +899,51 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
     let autoSyncTimer = null;
     let autoSyncCountdown = 60;
     let isAutoSyncRunning = false;
+
+    // Normalizes dates like "01-Jul-24", "30-Sep-27", Excel numbers, or ISO dates
+    function formatRawDate(val) {
+      if (val === undefined || val === null) return '';
+      if (val instanceof Date && !isNaN(val.getTime())) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = String(val.getDate()).padStart(2, '0');
+        const month = months[val.getMonth()];
+        const year = String(val.getFullYear()).slice(-2);
+        return day + '-' + month + '-' + year;
+      }
+      if (typeof val === 'number' && !isNaN(val) && val > 30000 && val < 65000) {
+        const utc_days = Math.floor(val - 25569);
+        const date = new Date(utc_days * 86400 * 1000);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = months[date.getUTCMonth()];
+        const year = String(date.getUTCFullYear()).slice(-2);
+        return day + '-' + month + '-' + year;
+      }
+      const str = String(val).trim();
+      if (!str) return '';
+
+      // Match "01-Jul-24" or "1-Jul-2024"
+      const dmyMatch = str.match(/^([0-9]{1,2})[-/ ]([a-zA-Z]{3,9})[-/ ]([0-9]{2,4})$/);
+      if (dmyMatch) {
+        const day = dmyMatch[1].padStart(2, '0');
+        const month = dmyMatch[2].charAt(0).toUpperCase() + dmyMatch[2].slice(1, 3).toLowerCase();
+        const year = dmyMatch[3].length === 4 ? dmyMatch[3].slice(-2) : dmyMatch[3];
+        return day + '-' + month + '-' + year;
+      }
+
+      // Match "2024-07-01"
+      const isoMatch = str.match(/^([0-9]{4})[-/]([0-9]{1,2})[-/]([0-9]{1,2})/);
+      if (isoMatch) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const y = isoMatch[1].slice(-2);
+        const m = parseInt(isoMatch[2], 10) - 1;
+        const d = isoMatch[3].padStart(2, '0');
+        if (m >= 0 && m < 12) {
+          return d + '-' + months[m] + '-' + y;
+        }
+      }
+      return str;
+    }
 
     // Defined official brand colors for OEM manufacturers
     function getOemColor(oem) {
@@ -903,7 +1017,6 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
         return;
       }
 
-      // Convert URL to Google Visualization API CSV stream (CORS friendly)
       let csvUrl = '';
       if (url.includes('output=csv')) {
         csvUrl = url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now();
@@ -940,7 +1053,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
         }
 
         // Parse with SheetJS
-        const workbook = XLSX.read(csvText, { type: 'string' });
+        const workbook = XLSX.read(csvText, { type: 'string', cellDates: true });
         const firstSheet = workbook.SheetNames[0];
         const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: '', raw: false });
 
@@ -950,7 +1063,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
 
         const parsed = parseSheetRows(rows);
         if (parsed.length === 0) {
-          throw new Error('Could not match expected columns (Customer Name, OEM Brand, etc.)');
+          throw new Error('Could not match expected columns (Customer Name, OEM, AMC Start Date, AMC End Date)');
         }
 
         allRecords = parsed;
@@ -963,7 +1076,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
         document.getElementById('activeSourceLabel').textContent = 'Google Sheet Live';
         document.getElementById('lastSyncedTime').textContent = '(Synced ' + timeStr + ')';
 
-        statusEl.textContent = 'Synced successfully! Loaded ' + parsed.length + ' real-time records from Google Sheet (' + timeStr + ').';
+        statusEl.textContent = 'Synced successfully! Loaded ' + parsed.length + ' records with AMC dates (' + timeStr + ').';
         statusEl.className = 'text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded inline-block';
         statusEl.classList.remove('hidden');
       } catch (err) {
@@ -993,7 +1106,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
       }
     }
 
-    // Row parser with extensive synonym matching
+    // Row parser with extensive synonym matching for AMC Start Date and AMC End Date
     function parseSheetRows(rows) {
       const parsed = [];
       rows.forEach((row, i) => {
@@ -1002,41 +1115,99 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
             const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
             for (const c of candidates) {
               if (clean === c.toLowerCase().replace(/[^a-z0-9]/g, '')) {
-                return String(row[k]).trim();
+                return row[k];
               }
             }
           }
           return '';
         };
 
-        const customer = getVal(['Customer Name', 'Customer', 'Company Name', 'Company', 'Client', 'Client Name', 'Account Name', 'Organization']);
-        const oem = getVal(['OEM Brand', 'OEM', 'Vendor', 'Manufacturer', 'Brand', 'Hardware Vendor', 'Make', 'OEM Provider', 'OEM Name']);
-        const model = getVal(['Device Type / Model', 'Device Model', 'Model', 'Device Type', 'Hardware Model', 'Product', 'Equipment']);
-        const serial = getVal(['Device Serial Number / Hostname', 'Serial Number', 'Serial', 'Hostname', 'S/N', 'Asset Tag', 'Serial #']);
-        const rawStatus = getVal(['Status', 'State', 'Lifecycle Status', 'Condition']);
-        const startDate = getVal(['Start Date', 'Deployment Start', 'Contract Start', 'Install Date', 'Start Date / Deployment', 'Start']);
-        const endDate = getVal(['End Date', 'Contract End', 'Warranty Expiration', 'Warranty', 'Expiry Date', 'Warranty End', 'End Date / Expiry', 'End']);
-        const industry = getVal(['Industry / Sector', 'Industry', 'Sector', 'Vertical']) || 'Enterprise';
-        const location = getVal(['Location', 'Site', 'Data Center', 'Facility', 'Region']);
+        const sl = String(getVal(['SL', 'S/L', 'Serial No', 'Sl No', 'No', '#']) || '').trim();
+        const customer = String(getVal(['Customer Name', 'Customer', 'Company Name', 'Company', 'Client', 'Client Name', 'Account Name', 'Organization']) || '').trim();
+        const oem = String(getVal(['OEM Brand', 'OEM', 'Vendor', 'Manufacturer', 'Brand', 'Hardware Vendor', 'Make', 'OEM Provider', 'OEM Name']) || '').trim();
+        const model = String(getVal(['Device Type / Model', 'Device Model', 'Model', 'Device Type', 'Hardware Model', 'Product', 'Equipment']) || '').trim();
+        const serial = String(getVal(['Device Serial Number / Hostname', 'Serial Number', 'Serial', 'Hostname', 'S/N', 'Asset Tag', 'Serial #']) || '').trim();
+        const rawStatus = String(getVal(['Status', 'State', 'Lifecycle Status', 'Condition']) || '').trim();
 
-        if (!customer && !oem && !serial && !model) return;
+        // Exact candidates for AMC Start Date & AMC End Date
+        let rawStart = getVal([
+          'AMC Start Date',
+          'AMC Start',
+          'AMC StartDate',
+          'AMC_Start_Date',
+          'AMC Date',
+          'Start Date',
+          'Deployment Start',
+          'Contract Start',
+          'Install Date',
+          'Start Date / Deployment',
+          'Start',
+          'From Date'
+        ]);
+
+        let rawEnd = getVal([
+          'AMC End Date',
+          'AMC End',
+          'AMC EndDate',
+          'AMC_End_Date',
+          'AMC Expiry',
+          'AMC Expiry Date',
+          'End Date',
+          'Contract End',
+          'Warranty Expiration',
+          'Warranty',
+          'Expiry Date',
+          'Warranty End',
+          'End Date / Expiry',
+          'End',
+          'To Date'
+        ]);
+
+        // Fuzzy fallback for Start Date
+        if (!rawStart) {
+          for (const k of Object.keys(row)) {
+            const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if ((clean.includes('start') || clean.includes('from')) && (clean.includes('amc') || clean.includes('date') || clean.includes('contract'))) {
+              rawStart = row[k];
+              break;
+            }
+          }
+        }
+
+        // Fuzzy fallback for End Date
+        if (!rawEnd) {
+          for (const k of Object.keys(row)) {
+            const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if ((clean.includes('end') || clean.includes('expir') || clean.includes('valid') || clean.includes('to')) && (clean.includes('amc') || clean.includes('date') || clean.includes('contract'))) {
+              rawEnd = row[k];
+              break;
+            }
+          }
+        }
+
+        const startDate = formatRawDate(rawStart);
+        const endDate = formatRawDate(rawEnd);
+
+        if (!customer && !oem && !startDate && !endDate) return;
 
         let status = 'Active';
         const st = rawStatus.toLowerCase();
         if (st.includes('maint') || st.includes('repair')) status = 'Maintenance';
         else if (st.includes('retir') || st.includes('decom') || st.includes('inactive')) status = 'Retired';
 
+        const displaySerial = serial || (sl ? 'SL #' + sl : 'SN-' + (100000 + i));
+        const displayModel = model || (oem ? oem + ' Hardware' : 'AMC Appliance');
+
         parsed.push({
           id: 'rec-' + i + '-' + Math.random().toString(36).substr(2, 4),
           customerName: customer || 'Unknown Client',
-          industry: industry,
+          industry: 'Enterprise',
           oemBrand: oem || 'Generic OEM',
-          deviceModel: model || 'Appliance',
-          serialNumber: serial || 'SN-' + (100000 + i),
+          deviceModel: displayModel,
+          serialNumber: displaySerial,
           status: status,
           startDate: startDate || '',
-          endDate: endDate || '',
-          location: location || ''
+          endDate: endDate || ''
         });
       });
       return parsed;
@@ -1101,11 +1272,9 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
 
       document.getElementById('filterOem').addEventListener('change', applyFilters);
       document.getElementById('filterStatus').addEventListener('change', applyFilters);
-      document.getElementById('filterIndustry').addEventListener('change', applyFilters);
 
       // Sorting
       document.getElementById('thCustomer').addEventListener('click', () => toggleSort('customerName'));
-      document.getElementById('thIndustry').addEventListener('click', () => toggleSort('industry'));
       document.getElementById('thOem').addEventListener('click', () => toggleSort('oemBrand'));
       document.getElementById('thModel').addEventListener('click', () => toggleSort('deviceModel'));
       document.getElementById('thStatus').addEventListener('click', () => toggleSort('status'));
@@ -1153,7 +1322,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
           const firstSheet = workbook.SheetNames[0];
           const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: '', raw: false });
 
@@ -1172,7 +1341,7 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
             document.getElementById('activeSourceLabel').textContent = file.name;
             document.getElementById('lastSyncedTime').textContent = '(' + parsed.length + ' items)';
 
-            statusEl.textContent = 'Successfully loaded ' + parsed.length + ' records from "' + file.name + '"';
+            statusEl.textContent = 'Successfully loaded ' + parsed.length + ' records from "' + file.name + '" with AMC dates.';
             statusEl.classList.remove('hidden');
           } else {
             alert('Could not match expected columns in the spreadsheet.');
@@ -1187,34 +1356,25 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
 
     function populateFilterOptions() {
       const oemSelect = document.getElementById('filterOem');
-      const indSelect = document.getElementById('filterIndustry');
-
       const oems = Array.from(new Set(allRecords.map(r => r.oemBrand).filter(Boolean))).sort();
-      const industries = Array.from(new Set(allRecords.map(r => r.industry).filter(Boolean))).sort();
-
       oemSelect.innerHTML = '<option value="">All OEMs</option>' + oems.map(o => '<option value="' + o + '">' + o + '</option>').join('');
-      indSelect.innerHTML = '<option value="">All Industries</option>' + industries.map(i => '<option value="' + i + '">' + i + '</option>').join('');
     }
 
     function applyFilters() {
       const q = document.getElementById('searchInput').value.toLowerCase().trim();
       const oemVal = document.getElementById('filterOem').value;
       const statusVal = document.getElementById('filterStatus').value;
-      const indVal = document.getElementById('filterIndustry').value;
 
       filteredRecords = allRecords.filter(r => {
         if (oemVal && r.oemBrand !== oemVal) return false;
         if (statusVal && r.status !== statusVal) return false;
-        if (indVal && r.industry !== indVal) return false;
         if (q) {
           const match = (r.customerName || '').toLowerCase().includes(q) ||
                         (r.oemBrand || '').toLowerCase().includes(q) ||
                         (r.deviceModel || '').toLowerCase().includes(q) ||
                         (r.serialNumber || '').toLowerCase().includes(q) ||
                         (r.startDate || '').toLowerCase().includes(q) ||
-                        (r.endDate || '').toLowerCase().includes(q) ||
-                        (r.industry || '').toLowerCase().includes(q) ||
-                        (r.location || '').toLowerCase().includes(q);
+                        (r.endDate || '').toLowerCase().includes(q);
           if (!match) return false;
         }
         return true;
@@ -1272,12 +1432,12 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
       document.getElementById('metricTotalCustomers').textContent = uniqueCustomers;
       document.getElementById('metricTotalDevices').textContent = totalDevices;
       document.getElementById('metricTopOem').textContent = topOem;
-      document.getElementById('metricTopOemSub').textContent = topOemPct + '% of fleet';
+      document.getElementById('metricTopOemSub').textContent = topOemPct + '% of contracts';
       document.getElementById('metricActiveDeployments').textContent = activeDevices;
       document.getElementById('metricActiveRate').textContent = activePct + '% operational';
 
       document.getElementById('filteredCountText').textContent = filteredRecords.length + ' of ' + allRecords.length + ' items';
-      document.getElementById('chartTotalBadge').textContent = totalDevices + ' assets';
+      document.getElementById('chartTotalBadge').textContent = totalDevices + ' contracts';
     }
 
     // Chart.js rendering with fixed vibrant brand colors
@@ -1400,7 +1560,6 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
 
         html += '<tr class="hover:bg-slate-50 transition-colors">' +
           '<td class="py-3 px-4 font-semibold text-slate-900">' + (r.customerName || '—') + '</td>' +
-          '<td class="py-3 px-4 text-slate-600">' + (r.industry || 'Enterprise') + '</td>' +
           '<td class="py-3 px-4">' +
             '<span class="inline-flex items-center gap-1.5 font-semibold" style="color:' + oemColor + '">' +
               '<span class="w-2 h-2 rounded-full shrink-0" style="background-color:' + oemColor + '"></span>' +
@@ -1410,9 +1569,8 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
           '<td class="py-3 px-4 text-slate-800">' + (r.deviceModel || 'Appliance') + '</td>' +
           '<td class="py-3 px-4 font-mono text-slate-500 text-[11px]">' + (r.serialNumber || '—') + '</td>' +
           '<td class="py-3 px-4">' + statusBadge + '</td>' +
-          '<td class="py-3 px-4 font-mono text-slate-600 text-[11px] whitespace-nowrap">' + (r.startDate || '—') + '</td>' +
-          '<td class="py-3 px-4 font-mono text-slate-600 text-[11px] whitespace-nowrap">' + (r.endDate || '—') + '</td>' +
-          '<td class="py-3 px-4 text-right text-slate-500 text-[11px]">' + (r.location || '—') + '</td>' +
+          '<td class="py-3 px-4 font-mono text-slate-700 font-medium text-[11px] whitespace-nowrap">' + (r.startDate || '—') + '</td>' +
+          '<td class="py-3 px-4 font-mono text-slate-700 font-medium text-[11px] whitespace-nowrap">' + (r.endDate || '—') + '</td>' +
         '</tr>';
       });
 
@@ -1425,32 +1583,33 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
 
     function downloadTemplateFile() {
       const ws = XLSX.utils.json_to_sheet([
-        { 'Customer Name': 'Apex Capital Partners', 'Industry / Sector': 'Financial Services', 'OEM Brand': 'Cisco', 'Device Type / Model': 'Catalyst 9300 48P', 'Device Serial Number / Hostname': 'CSCO-9300-8812A', 'Status': 'Active', 'Start Date': '2023-08-15', 'End Date': '2027-08-15', 'Location': 'NY-Equinix NY4' },
-        { 'Customer Name': 'Apex Capital Partners', 'Industry / Sector': 'Financial Services', 'OEM Brand': 'F5', 'Device Type / Model': 'BIG-IP i5800 ADC', 'Device Serial Number / Hostname': 'F5-BIGIP-9901X', 'Status': 'Active', 'Start Date': '2023-01-20', 'End Date': '2026-01-20', 'Location': 'NY-Equinix NY4' },
-        { 'Customer Name': 'AcroPoint Logistics', 'Industry / Sector': 'Supply Chain', 'OEM Brand': 'Palo Alto', 'Device Type / Model': 'PA-3260 NGFW', 'Device Serial Number / Hostname': 'PANW-3260-X0921', 'Status': 'Active', 'Start Date': '2022-11-30', 'End Date': '2026-11-30', 'Location': 'Chicago Hub' },
-        { 'Customer Name': 'Zenith Health Systems', 'Industry / Sector': 'Healthcare', 'OEM Brand': 'FortiNet', 'Device Type / Model': 'FortiGate 200F', 'Device Serial Number / Hostname': 'FG-200F-H8821', 'Status': 'Active', 'Start Date': '2021-09-14', 'End Date': '2025-09-14', 'Location': 'Boston Clinical HQ' },
-        { 'Customer Name': 'Zenith Health Systems', 'Industry / Sector': 'Healthcare', 'OEM Brand': 'Algosec', 'Device Type / Model': 'AlgoSec Firewall Analyzer', 'Device Serial Number / Hostname': 'ALGO-SMS-V332', 'Status': 'Active', 'Start Date': '2023-05-18', 'End Date': '2026-05-18', 'Location': 'Boston Clinical HQ' }
+        { 'SL': 1, 'Customer Name': 'Standard Chartered Bank', 'OEM': 'Cisco', 'AMC Start Date': '01-Jul-24', 'AMC End Date': '30-Sep-27' },
+        { 'SL': 2, 'Customer Name': 'Standard Chartered Bank', 'OEM': 'Cisco', 'AMC Start Date': '01-Apr-25', 'AMC End Date': '30-Sep-27' },
+        { 'SL': 3, 'Customer Name': 'UCBL', 'OEM': 'Checkpoint', 'AMC Start Date': '01-Oct-25', 'AMC End Date': '30-Sep-26' },
+        { 'SL': 4, 'Customer Name': 'UCBL', 'OEM': 'Algosec', 'AMC Start Date': '01-Oct-25', 'AMC End Date': '30-Sep-26' },
+        { 'SL': 5, 'Customer Name': 'CDBL', 'OEM': 'F5', 'AMC Start Date': '01-Jan-26', 'AMC End Date': '31-Dec-26' },
+        { 'SL': 6, 'Customer Name': 'CAL Securities Limited', 'OEM': 'FortiNet', 'AMC Start Date': '29-Dec-25', 'AMC End Date': '28-Dec-28' },
+        { 'SL': 7, 'Customer Name': 'AB Bank PLC', 'OEM': 'PaloAlto', 'AMC Start Date': '24-Dec-25', 'AMC End Date': '23-Dec-27' }
       ]);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Customer_OEM_Assets');
-      XLSX.writeFile(wb, 'customer_oem_template.xlsx');
+      XLSX.utils.book_append_sheet(wb, ws, 'AMC_List');
+      XLSX.writeFile(wb, 'AMC_List_Template.xlsx');
     }
 
     function exportCurrentData() {
-      const ws = XLSX.utils.json_to_sheet(filteredRecords.map(r => ({
+      const ws = XLSX.utils.json_to_sheet(filteredRecords.map((r, i) => ({
+        'SL': i + 1,
         'Customer Name': r.customerName,
-        'Industry / Sector': r.industry,
-        'OEM Brand': r.oemBrand,
-        'Device Type / Model': r.deviceModel,
-        'Device Serial Number / Hostname': r.serialNumber,
+        'OEM': r.oemBrand,
+        'Device Model': r.deviceModel,
+        'Serial Number / Hostname': r.serialNumber,
         'Status': r.status,
-        'Start Date': r.startDate || '',
-        'End Date': r.endDate || '',
-        'Location': r.location || ''
+        'AMC Start Date': r.startDate || '',
+        'AMC End Date': r.endDate || ''
       })));
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
-      XLSX.writeFile(wb, 'customer_oem_inventory.xlsx');
+      XLSX.utils.book_append_sheet(wb, ws, 'AMC_Inventory');
+      XLSX.writeFile(wb, 'AMC_customer_oem_inventory.xlsx');
     }
 
     window.addEventListener('DOMContentLoaded', init);

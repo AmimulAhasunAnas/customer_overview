@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Customer OEM Asset Tracker - GitHub Pages</title>
-  <meta name="description" content="Client-side enterprise dashboard tracking customer hardware inventory and OEM vendor deployments with real-time Google Sheets sync.">
+  <meta name="description" content="Client-side enterprise dashboard tracking customer AMC inventory and OEM vendor deployments with real-time Google Sheets sync.">
 
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -56,7 +56,7 @@
         border-collapse: collapse !important;
       }
       th, td {
-        padding: 5px 8px !important;
+        padding: 6px 10px !important;
         border: 1px solid #cbd5e1 !important;
       }
     }
@@ -80,7 +80,7 @@
               Live Ready
             </span>
           </div>
-          <p class="text-xs text-slate-500">Track client accounts, OEM vendors &amp; real-time hardware deployments</p>
+          <p class="text-xs text-slate-500">Track client accounts, OEM vendors &amp; real-time AMC contract deployments</p>
         </div>
       </div>
 
@@ -155,7 +155,7 @@
             <div>
               <h2 class="text-sm font-bold text-slate-900">Connect Google Sheet with Read Permission</h2>
               <p class="text-xs text-slate-500 mt-0.5">
-                Paste your Google Sheet link (<span class="font-medium text-slate-700">Anyone with the link can view</span>). Live changes made in Google Sheets sync directly into your dashboard!
+                Paste your Google Sheet link (<span class="font-medium text-slate-700">Anyone with the link can view</span>). Supports AMC Start Date and AMC End Date formats (e.g. <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-[11px]">01-Jul-24</code>, <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-[11px]">30-Sep-27</code>).
               </p>
             </div>
           </div>
@@ -202,7 +202,7 @@
             </div>
             <div>
               <h2 class="text-sm font-semibold text-slate-900">Upload Excel Spreadsheet</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Drag and drop an Excel (.xlsx, .xls) or CSV file. 100% client-side parsing via SheetJS.</p>
+              <p class="text-xs text-slate-500 mt-0.5">Drag and drop an Excel (.xlsx, .xls) or CSV file. Parses AMC Start Date, AMC End Date, Customer Name, and OEM.</p>
               <div id="excelUploadStatus" class="mt-2 text-xs text-emerald-600 font-medium hidden"></div>
             </div>
           </div>
@@ -223,15 +223,15 @@
         <p class="text-xs font-medium text-slate-500">Total Customers</p>
         <div class="mt-2 flex items-baseline justify-between">
           <span id="metricTotalCustomers" class="text-2xl font-bold text-slate-900">0</span>
-          <span class="text-xs text-slate-500">Enterprise accounts</span>
+          <span class="text-xs text-slate-500">Client accounts</span>
         </div>
       </div>
 
       <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-        <p class="text-xs font-medium text-slate-500">Total Tracked Devices</p>
+        <p class="text-xs font-medium text-slate-500">Total AMC Contracts</p>
         <div class="mt-2 flex items-baseline justify-between">
           <span id="metricTotalDevices" class="text-2xl font-bold text-slate-900">0</span>
-          <span class="text-xs text-slate-500">Hardware assets</span>
+          <span class="text-xs text-slate-500">Active contracts</span>
         </div>
       </div>
 
@@ -282,7 +282,7 @@
       </div>
     </section>
 
-    <!-- Filter & Management Controls + Data Table -->
+    <!-- Filter & Management Controls + Data Table (Location Column Removed) -->
     <section class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
       <div class="p-4 border-b border-slate-200 bg-slate-50/75 flex flex-wrap items-center justify-between gap-3">
         <!-- Search -->
@@ -293,7 +293,7 @@
           <input
             type="text"
             id="searchInput"
-            placeholder="Search customer, OEM, model, serial, dates..."
+            placeholder="Search customer, OEM, dates..."
             class="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
           />
           <button id="clearSearchBtn" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 hidden text-xs font-bold">&times;</button>
@@ -312,17 +312,13 @@
             <option value="Retired">Retired</option>
           </select>
 
-          <select id="filterIndustry" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500">
-            <option value="">All Industries</option>
-          </select>
-
           <div class="h-5 w-px bg-slate-200 mx-1"></div>
 
           <span id="filteredCountText" class="text-xs text-slate-500 font-medium">0 items</span>
         </div>
       </div>
 
-      <!-- Data Table with Start Date and End Date -->
+      <!-- Data Table with Start Date and End Date (No Location) -->
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
@@ -330,12 +326,6 @@
               <th id="thCustomer" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">
                 <div class="flex items-center gap-1">
                   <span>Customer / Company</span>
-                  <span class="sort-icon text-slate-400">↕</span>
-                </div>
-              </th>
-              <th id="thIndustry" class="py-3 px-4 cursor-pointer hover:bg-slate-200/50 transition-colors">
-                <div class="flex items-center gap-1">
-                  <span>Industry</span>
                   <span class="sort-icon text-slate-400">↕</span>
                 </div>
               </th>
@@ -370,7 +360,6 @@
                   <span class="sort-icon text-slate-400">↕</span>
                 </div>
               </th>
-              <th class="py-3 px-4 text-right">Location</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-100 font-normal">
@@ -427,7 +416,7 @@
           <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0">1</div>
           <div>
             <p class="font-semibold text-slate-900">Open your Google Sheet</p>
-            <p class="text-slate-500 mt-0.5">Open the Google spreadsheet (or Excel uploaded to Drive) in your web browser.</p>
+            <p class="text-slate-500 mt-0.5">Open your AMC spreadsheet in your web browser.</p>
           </div>
         </div>
 
@@ -447,7 +436,7 @@
           <div>
             <p class="font-semibold text-slate-900">Paste Link or Save in Code</p>
             <p class="text-slate-500 mt-0.5">
-              Paste the link into the dashboard input and click <strong>Connect &amp; Live Sync</strong>. The app remembers your link and syncs live updates directly in the browser!
+              Paste the link into the dashboard input and click <strong>Connect &amp; Live Sync</strong>. The app automatically recognizes <strong>AMC Start Date</strong> and <strong>AMC End Date</strong>!
             </p>
           </div>
         </div>
@@ -470,7 +459,7 @@
   <footer class="bg-white border-t border-slate-200 py-4 mt-8">
     <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
       <p>Customer OEM Tracker &bull; Standalone Single-Page Application for GitHub Pages</p>
-      <p>Supports Real-Time Google Sheets Sync + SheetJS Client-Side Upload</p>
+      <p>Real-Time Google Sheets Sync + SheetJS Client-Side Upload</p>
     </div>
   </footer>
 
@@ -479,7 +468,6 @@
     // =========================================================================
     // 🔗 GOOGLE SHEET REAL-TIME CONFIGURATION
     // Paste your Google Sheet Share Link below (with "Anyone with the link can view")
-    // Example: "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit?usp=sharing"
     // =========================================================================
     const DEFAULT_GOOGLE_SHEET_URL = "";
 
@@ -487,207 +475,190 @@
     const DEFAULT_RECORDS = [
       {
         "id": "rec-101",
-        "customerName": "Apex Capital Partners",
+        "customerName": "Standard Chartered Bank",
         "industry": "Financial Services",
         "oemBrand": "Cisco",
         "deviceModel": "Catalyst 9300 48P Switch",
         "serialNumber": "CSCO-9300-8812A",
         "status": "Active",
-        "startDate": "2023-08-15",
-        "endDate": "2027-08-15",
-        "location": "NY-Primary DC (Equinix NY4)"
+        "startDate": "01-Jul-24",
+        "endDate": "30-Sep-27"
       },
       {
         "id": "rec-102",
-        "customerName": "Apex Capital Partners",
+        "customerName": "Standard Chartered Bank",
         "industry": "Financial Services",
-        "oemBrand": "F5",
-        "deviceModel": "BIG-IP i5800 ADC Appliance",
-        "serialNumber": "F5-BIGIP-9901X",
+        "oemBrand": "Cisco",
+        "deviceModel": "Nexus 93180YC Switch",
+        "serialNumber": "CSCO-9318-K882B",
         "status": "Active",
-        "startDate": "2023-01-20",
-        "endDate": "2026-01-20",
-        "location": "NY-Primary DC (Equinix NY4)"
+        "startDate": "01-Apr-25",
+        "endDate": "30-Sep-27"
       },
       {
         "id": "rec-103",
-        "customerName": "Apex Capital Partners",
-        "industry": "Financial Services",
-        "oemBrand": "Palo Alto",
-        "deviceModel": "PA-3260 Next-Gen Firewall",
-        "serialNumber": "PANW-3260-X0921",
+        "customerName": "UCBL",
+        "industry": "Banking",
+        "oemBrand": "Checkpoint",
+        "deviceModel": "Quantum 6200 Gateway",
+        "serialNumber": "CHKP-6200-Z4419",
         "status": "Active",
-        "startDate": "2022-11-30",
-        "endDate": "2026-11-30",
-        "location": "NY-Primary DC (Equinix NY4)"
+        "startDate": "01-Oct-25",
+        "endDate": "30-Sep-26"
       },
       {
         "id": "rec-104",
-        "customerName": "AcroPoint Global Logistics",
-        "industry": "Supply Chain & Freight",
-        "oemBrand": "Checkpoint",
-        "deviceModel": "Quantum 6200 Security Gateway",
-        "serialNumber": "CHKP-6200-Z4419",
+        "customerName": "UCBL",
+        "industry": "Banking",
+        "oemBrand": "Algosec",
+        "deviceModel": "AlgoSec Security Suite",
+        "serialNumber": "ALGO-SMS-V332",
         "status": "Active",
-        "startDate": "2022-04-12",
-        "endDate": "2026-04-12",
-        "location": "Chicago Hub (ORD-01)"
+        "startDate": "01-Oct-25",
+        "endDate": "30-Sep-26"
       },
       {
         "id": "rec-105",
-        "customerName": "AcroPoint Global Logistics",
-        "industry": "Supply Chain & Freight",
-        "oemBrand": "Cisco",
-        "deviceModel": "Nexus 93180YC-FX Switch",
-        "serialNumber": "CSCO-N9K-4421B",
+        "customerName": "CDBL",
+        "industry": "Financial Infrastructure",
+        "oemBrand": "F5",
+        "deviceModel": "BIG-IP i5800 ADC",
+        "serialNumber": "F5-BIGIP-9901X",
         "status": "Active",
-        "startDate": "2023-03-01",
-        "endDate": "2027-03-01",
-        "location": "Chicago Hub (ORD-01)"
+        "startDate": "01-Jan-26",
+        "endDate": "31-Dec-26"
       },
       {
         "id": "rec-106",
-        "customerName": "Zenith Health Systems",
-        "industry": "Healthcare",
-        "oemBrand": "FortiNet",
-        "deviceModel": "FortiGate 200F NGFW",
-        "serialNumber": "FG-200F-H8821",
+        "customerName": "Sonali Bank Ltd.",
+        "industry": "Banking",
+        "oemBrand": "Cisco",
+        "deviceModel": "Catalyst 9500 Core",
+        "serialNumber": "CSCO-9500-T1001",
         "status": "Active",
-        "startDate": "2021-09-14",
-        "endDate": "2025-09-14",
-        "location": "Boston Clinical HQ"
+        "startDate": "01-Apr-25",
+        "endDate": "31-Mar-27"
       },
       {
         "id": "rec-107",
-        "customerName": "Zenith Health Systems",
-        "industry": "Healthcare",
-        "oemBrand": "Algosec",
-        "deviceModel": "AlgoSec Security Suite (AFA/AFF)",
-        "serialNumber": "ALGO-SMS-V332",
+        "customerName": "Rupali Bank DC AMC",
+        "industry": "Banking",
+        "oemBrand": "Cisco",
+        "deviceModel": "Nexus 9336C Spine",
+        "serialNumber": "CSCO-N9K-9902C",
         "status": "Active",
-        "startDate": "2023-05-18",
-        "endDate": "2026-05-18",
-        "location": "Boston Clinical HQ"
+        "startDate": "12-May-24",
+        "endDate": "11-May-26"
       },
       {
         "id": "rec-108",
-        "customerName": "Zenith Health Systems",
-        "industry": "Healthcare",
-        "oemBrand": "F5",
-        "deviceModel": "VIPRION 2400 Chassis",
-        "serialNumber": "F5-VIP-2400-01",
+        "customerName": "Rupali Bank DR AMC",
+        "industry": "Banking",
+        "oemBrand": "Cisco",
+        "deviceModel": "Catalyst 9300 Edge",
+        "serialNumber": "CSCO-9300-DR44",
         "status": "Active",
-        "startDate": "2022-08-10",
-        "endDate": "2026-08-10",
-        "location": "Boston Clinical HQ"
+        "startDate": "14-Apr-24",
+        "endDate": "13-Apr-26"
       },
       {
         "id": "rec-109",
-        "customerName": "Vanguard Media Group",
-        "industry": "Media & Telecommunications",
+        "customerName": "Rupali Bank Mbanking",
+        "industry": "Banking",
         "oemBrand": "Cisco",
-        "deviceModel": "Catalyst 9500 40X Core Switch",
-        "serialNumber": "CSCO-9500-T1001",
+        "deviceModel": "Catalyst 3850 Switch",
+        "serialNumber": "CSCO-3850-MB01",
         "status": "Active",
-        "startDate": "2023-06-15",
-        "endDate": "2027-06-15",
-        "location": "LA Broadcast Studio"
+        "startDate": "20-Mar-25",
+        "endDate": "19-Mar-28"
       },
       {
         "id": "rec-110",
-        "customerName": "Vanguard Media Group",
-        "industry": "Media & Telecommunications",
-        "oemBrand": "Palo Alto",
-        "deviceModel": "PA-5220 High-Throughput NGFW",
-        "serialNumber": "PANW-5220-B8814",
+        "customerName": "NRBC",
+        "industry": "Banking",
+        "oemBrand": "Cisco",
+        "deviceModel": "Catalyst 9300 PoE",
+        "serialNumber": "CSCO-NRBC-01",
         "status": "Active",
-        "startDate": "2023-07-01",
-        "endDate": "2027-07-01",
-        "location": "LA Broadcast Studio"
+        "startDate": "01-Mar-26",
+        "endDate": "28-Feb-27"
       },
       {
         "id": "rec-111",
-        "customerName": "Nexus Energy Global",
-        "industry": "Energy & Utilities",
-        "oemBrand": "Checkpoint",
-        "deviceModel": "Quantum Rugged 1570R Gateway",
-        "serialNumber": "CHKP-1570R-E991",
-        "status": "Maintenance",
-        "startDate": "2022-10-05",
-        "endDate": "2025-10-05",
-        "location": "Houston Refinery Site"
+        "customerName": "NRBC",
+        "industry": "Banking",
+        "oemBrand": "F5",
+        "deviceModel": "BIG-IP Virtual Edition",
+        "serialNumber": "F5-VE-NRBC-02",
+        "status": "Active",
+        "startDate": "01-Mar-26",
+        "endDate": "28-Feb-27"
       },
       {
         "id": "rec-112",
-        "customerName": "Nexus Energy Global",
-        "industry": "Energy & Utilities",
-        "oemBrand": "FortiNet",
-        "deviceModel": "FortiSwitch 448E Rugged",
-        "serialNumber": "FS-448E-R772",
+        "customerName": "SGS",
+        "industry": "Testing & Certification",
+        "oemBrand": "Checkpoint",
+        "deviceModel": "Quantum 6600 Gateway",
+        "serialNumber": "CHKP-6600-SGS",
         "status": "Active",
-        "startDate": "2023-04-11",
-        "endDate": "2027-04-11",
-        "location": "Houston Refinery Site"
+        "startDate": "01-Sep-25",
+        "endDate": "30-Aug-27"
       },
       {
         "id": "rec-113",
-        "customerName": "Orion Cloud Technologies",
-        "industry": "Technology / SaaS",
-        "oemBrand": "Cisco",
-        "deviceModel": "Nexus 9336C-FX2 Spine Switch",
-        "serialNumber": "CSCO-N9K-9902C",
+        "customerName": "EXIM Bank",
+        "industry": "Banking",
+        "oemBrand": "F5",
+        "deviceModel": "BIG-IP i2800 ADC",
+        "serialNumber": "F5-EXIM-2800",
         "status": "Active",
-        "startDate": "2023-11-01",
-        "endDate": "2028-11-01",
-        "location": "Seattle West DC"
+        "startDate": "01-Jan-26",
+        "endDate": "31-Dec-26"
       },
       {
         "id": "rec-114",
-        "customerName": "Orion Cloud Technologies",
-        "industry": "Technology / SaaS",
-        "oemBrand": "F5",
-        "deviceModel": "BIG-IP Virtual Edition (VE)",
-        "serialNumber": "F5-VE-LIC-00812",
+        "customerName": "CAL Securities Limited",
+        "industry": "Securities & Investment",
+        "oemBrand": "FortiNet",
+        "deviceModel": "FortiGate 200F NGFW",
+        "serialNumber": "FG-200F-CAL01",
         "status": "Active",
-        "startDate": "2023-11-15",
-        "endDate": "2026-11-15",
-        "location": "Seattle West DC"
+        "startDate": "29-Dec-25",
+        "endDate": "28-Dec-28"
       },
       {
         "id": "rec-115",
-        "customerName": "Solstice Retail Brands",
-        "industry": "Retail & E-Commerce",
-        "oemBrand": "FortiNet",
-        "deviceModel": "FortiGate 100F SD-WAN",
-        "serialNumber": "FG-100F-Q2291",
+        "customerName": "BCC",
+        "industry": "Enterprise",
+        "oemBrand": "F5",
+        "deviceModel": "BIG-IP i5800 ADC",
+        "serialNumber": "F5-BCC-5800",
         "status": "Active",
-        "startDate": "2022-06-20",
-        "endDate": "2026-06-20",
-        "location": "Dallas Regional Hub"
+        "startDate": "01-Jan-26",
+        "endDate": "31-Dec-27"
       },
       {
         "id": "rec-116",
-        "customerName": "Solstice Retail Brands",
-        "industry": "Retail & E-Commerce",
-        "oemBrand": "Cisco",
-        "deviceModel": "Meraki MS350 Switch",
-        "serialNumber": "MRK-MS350-K551",
+        "customerName": "AB Bank PLC",
+        "industry": "Banking",
+        "oemBrand": "PaloAlto",
+        "deviceModel": "PA-3260 NGFW",
+        "serialNumber": "PANW-3260-AB01",
         "status": "Active",
-        "startDate": "2022-07-01",
-        "endDate": "2026-07-01",
-        "location": "Dallas Regional Hub"
+        "startDate": "24-Dec-25",
+        "endDate": "23-Dec-27"
       },
       {
         "id": "rec-117",
-        "customerName": "BioGenix Pharmaceuticals",
-        "industry": "Life Sciences",
-        "oemBrand": "Algosec",
-        "deviceModel": "AlgoSec Firewall Analyzer Cloud",
-        "serialNumber": "ALGO-CLD-9912",
+        "customerName": "Janata Bank PLC",
+        "industry": "Banking",
+        "oemBrand": "F5",
+        "deviceModel": "VIPRION 2400 Chassis",
+        "serialNumber": "F5-VIP-JANATA",
         "status": "Active",
-        "startDate": "2023-09-01",
-        "endDate": "2026-09-01",
-        "location": "Cambridge R&D Campus"
+        "startDate": "28-Apr-26",
+        "endDate": "30-Apr-28"
       }
     ];
 
@@ -704,6 +675,51 @@
     let autoSyncTimer = null;
     let autoSyncCountdown = 60;
     let isAutoSyncRunning = false;
+
+    // Normalizes dates like "01-Jul-24", "30-Sep-27", Excel numbers, or ISO dates
+    function formatRawDate(val) {
+      if (val === undefined || val === null) return '';
+      if (val instanceof Date && !isNaN(val.getTime())) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = String(val.getDate()).padStart(2, '0');
+        const month = months[val.getMonth()];
+        const year = String(val.getFullYear()).slice(-2);
+        return day + '-' + month + '-' + year;
+      }
+      if (typeof val === 'number' && !isNaN(val) && val > 30000 && val < 65000) {
+        const utc_days = Math.floor(val - 25569);
+        const date = new Date(utc_days * 86400 * 1000);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = months[date.getUTCMonth()];
+        const year = String(date.getUTCFullYear()).slice(-2);
+        return day + '-' + month + '-' + year;
+      }
+      const str = String(val).trim();
+      if (!str) return '';
+
+      // Match "01-Jul-24" or "1-Jul-2024"
+      const dmyMatch = str.match(/^([0-9]{1,2})[-/ ]([a-zA-Z]{3,9})[-/ ]([0-9]{2,4})$/);
+      if (dmyMatch) {
+        const day = dmyMatch[1].padStart(2, '0');
+        const month = dmyMatch[2].charAt(0).toUpperCase() + dmyMatch[2].slice(1, 3).toLowerCase();
+        const year = dmyMatch[3].length === 4 ? dmyMatch[3].slice(-2) : dmyMatch[3];
+        return day + '-' + month + '-' + year;
+      }
+
+      // Match "2024-07-01"
+      const isoMatch = str.match(/^([0-9]{4})[-/]([0-9]{1,2})[-/]([0-9]{1,2})/);
+      if (isoMatch) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const y = isoMatch[1].slice(-2);
+        const m = parseInt(isoMatch[2], 10) - 1;
+        const d = isoMatch[3].padStart(2, '0');
+        if (m >= 0 && m < 12) {
+          return d + '-' + months[m] + '-' + y;
+        }
+      }
+      return str;
+    }
 
     // Defined official brand colors for OEM manufacturers
     function getOemColor(oem) {
@@ -777,7 +793,6 @@
         return;
       }
 
-      // Convert URL to Google Visualization API CSV stream (CORS friendly)
       let csvUrl = '';
       if (url.includes('output=csv')) {
         csvUrl = url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now();
@@ -814,7 +829,7 @@
         }
 
         // Parse with SheetJS
-        const workbook = XLSX.read(csvText, { type: 'string' });
+        const workbook = XLSX.read(csvText, { type: 'string', cellDates: true });
         const firstSheet = workbook.SheetNames[0];
         const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: '', raw: false });
 
@@ -824,7 +839,7 @@
 
         const parsed = parseSheetRows(rows);
         if (parsed.length === 0) {
-          throw new Error('Could not match expected columns (Customer Name, OEM Brand, etc.)');
+          throw new Error('Could not match expected columns (Customer Name, OEM, AMC Start Date, AMC End Date)');
         }
 
         allRecords = parsed;
@@ -837,7 +852,7 @@
         document.getElementById('activeSourceLabel').textContent = 'Google Sheet Live';
         document.getElementById('lastSyncedTime').textContent = '(Synced ' + timeStr + ')';
 
-        statusEl.textContent = 'Synced successfully! Loaded ' + parsed.length + ' real-time records from Google Sheet (' + timeStr + ').';
+        statusEl.textContent = 'Synced successfully! Loaded ' + parsed.length + ' records with AMC dates (' + timeStr + ').';
         statusEl.className = 'text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded inline-block';
         statusEl.classList.remove('hidden');
       } catch (err) {
@@ -867,7 +882,7 @@
       }
     }
 
-    // Row parser with extensive synonym matching
+    // Row parser with extensive synonym matching for AMC Start Date and AMC End Date
     function parseSheetRows(rows) {
       const parsed = [];
       rows.forEach((row, i) => {
@@ -876,41 +891,99 @@
             const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
             for (const c of candidates) {
               if (clean === c.toLowerCase().replace(/[^a-z0-9]/g, '')) {
-                return String(row[k]).trim();
+                return row[k];
               }
             }
           }
           return '';
         };
 
-        const customer = getVal(['Customer Name', 'Customer', 'Company Name', 'Company', 'Client', 'Client Name', 'Account Name', 'Organization']);
-        const oem = getVal(['OEM Brand', 'OEM', 'Vendor', 'Manufacturer', 'Brand', 'Hardware Vendor', 'Make', 'OEM Provider', 'OEM Name']);
-        const model = getVal(['Device Type / Model', 'Device Model', 'Model', 'Device Type', 'Hardware Model', 'Product', 'Equipment']);
-        const serial = getVal(['Device Serial Number / Hostname', 'Serial Number', 'Serial', 'Hostname', 'S/N', 'Asset Tag', 'Serial #']);
-        const rawStatus = getVal(['Status', 'State', 'Lifecycle Status', 'Condition']);
-        const startDate = getVal(['Start Date', 'Deployment Start', 'Contract Start', 'Install Date', 'Start Date / Deployment', 'Start']);
-        const endDate = getVal(['End Date', 'Contract End', 'Warranty Expiration', 'Warranty', 'Expiry Date', 'Warranty End', 'End Date / Expiry', 'End']);
-        const industry = getVal(['Industry / Sector', 'Industry', 'Sector', 'Vertical']) || 'Enterprise';
-        const location = getVal(['Location', 'Site', 'Data Center', 'Facility', 'Region']);
+        const sl = String(getVal(['SL', 'S/L', 'Serial No', 'Sl No', 'No', '#']) || '').trim();
+        const customer = String(getVal(['Customer Name', 'Customer', 'Company Name', 'Company', 'Client', 'Client Name', 'Account Name', 'Organization']) || '').trim();
+        const oem = String(getVal(['OEM Brand', 'OEM', 'Vendor', 'Manufacturer', 'Brand', 'Hardware Vendor', 'Make', 'OEM Provider', 'OEM Name']) || '').trim();
+        const model = String(getVal(['Device Type / Model', 'Device Model', 'Model', 'Device Type', 'Hardware Model', 'Product', 'Equipment']) || '').trim();
+        const serial = String(getVal(['Device Serial Number / Hostname', 'Serial Number', 'Serial', 'Hostname', 'S/N', 'Asset Tag', 'Serial #']) || '').trim();
+        const rawStatus = String(getVal(['Status', 'State', 'Lifecycle Status', 'Condition']) || '').trim();
 
-        if (!customer && !oem && !serial && !model) return;
+        // Exact candidates for AMC Start Date & AMC End Date
+        let rawStart = getVal([
+          'AMC Start Date',
+          'AMC Start',
+          'AMC StartDate',
+          'AMC_Start_Date',
+          'AMC Date',
+          'Start Date',
+          'Deployment Start',
+          'Contract Start',
+          'Install Date',
+          'Start Date / Deployment',
+          'Start',
+          'From Date'
+        ]);
+
+        let rawEnd = getVal([
+          'AMC End Date',
+          'AMC End',
+          'AMC EndDate',
+          'AMC_End_Date',
+          'AMC Expiry',
+          'AMC Expiry Date',
+          'End Date',
+          'Contract End',
+          'Warranty Expiration',
+          'Warranty',
+          'Expiry Date',
+          'Warranty End',
+          'End Date / Expiry',
+          'End',
+          'To Date'
+        ]);
+
+        // Fuzzy fallback for Start Date
+        if (!rawStart) {
+          for (const k of Object.keys(row)) {
+            const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if ((clean.includes('start') || clean.includes('from')) && (clean.includes('amc') || clean.includes('date') || clean.includes('contract'))) {
+              rawStart = row[k];
+              break;
+            }
+          }
+        }
+
+        // Fuzzy fallback for End Date
+        if (!rawEnd) {
+          for (const k of Object.keys(row)) {
+            const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if ((clean.includes('end') || clean.includes('expir') || clean.includes('valid') || clean.includes('to')) && (clean.includes('amc') || clean.includes('date') || clean.includes('contract'))) {
+              rawEnd = row[k];
+              break;
+            }
+          }
+        }
+
+        const startDate = formatRawDate(rawStart);
+        const endDate = formatRawDate(rawEnd);
+
+        if (!customer && !oem && !startDate && !endDate) return;
 
         let status = 'Active';
         const st = rawStatus.toLowerCase();
         if (st.includes('maint') || st.includes('repair')) status = 'Maintenance';
         else if (st.includes('retir') || st.includes('decom') || st.includes('inactive')) status = 'Retired';
 
+        const displaySerial = serial || (sl ? 'SL #' + sl : 'SN-' + (100000 + i));
+        const displayModel = model || (oem ? oem + ' Hardware' : 'AMC Appliance');
+
         parsed.push({
           id: 'rec-' + i + '-' + Math.random().toString(36).substr(2, 4),
           customerName: customer || 'Unknown Client',
-          industry: industry,
+          industry: 'Enterprise',
           oemBrand: oem || 'Generic OEM',
-          deviceModel: model || 'Appliance',
-          serialNumber: serial || 'SN-' + (100000 + i),
+          deviceModel: displayModel,
+          serialNumber: displaySerial,
           status: status,
           startDate: startDate || '',
-          endDate: endDate || '',
-          location: location || ''
+          endDate: endDate || ''
         });
       });
       return parsed;
@@ -975,11 +1048,9 @@
 
       document.getElementById('filterOem').addEventListener('change', applyFilters);
       document.getElementById('filterStatus').addEventListener('change', applyFilters);
-      document.getElementById('filterIndustry').addEventListener('change', applyFilters);
 
       // Sorting
       document.getElementById('thCustomer').addEventListener('click', () => toggleSort('customerName'));
-      document.getElementById('thIndustry').addEventListener('click', () => toggleSort('industry'));
       document.getElementById('thOem').addEventListener('click', () => toggleSort('oemBrand'));
       document.getElementById('thModel').addEventListener('click', () => toggleSort('deviceModel'));
       document.getElementById('thStatus').addEventListener('click', () => toggleSort('status'));
@@ -1027,7 +1098,7 @@
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
           const firstSheet = workbook.SheetNames[0];
           const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: '', raw: false });
 
@@ -1046,7 +1117,7 @@
             document.getElementById('activeSourceLabel').textContent = file.name;
             document.getElementById('lastSyncedTime').textContent = '(' + parsed.length + ' items)';
 
-            statusEl.textContent = 'Successfully loaded ' + parsed.length + ' records from "' + file.name + '"';
+            statusEl.textContent = 'Successfully loaded ' + parsed.length + ' records from "' + file.name + '" with AMC dates.';
             statusEl.classList.remove('hidden');
           } else {
             alert('Could not match expected columns in the spreadsheet.');
@@ -1061,34 +1132,25 @@
 
     function populateFilterOptions() {
       const oemSelect = document.getElementById('filterOem');
-      const indSelect = document.getElementById('filterIndustry');
-
       const oems = Array.from(new Set(allRecords.map(r => r.oemBrand).filter(Boolean))).sort();
-      const industries = Array.from(new Set(allRecords.map(r => r.industry).filter(Boolean))).sort();
-
       oemSelect.innerHTML = '<option value="">All OEMs</option>' + oems.map(o => '<option value="' + o + '">' + o + '</option>').join('');
-      indSelect.innerHTML = '<option value="">All Industries</option>' + industries.map(i => '<option value="' + i + '">' + i + '</option>').join('');
     }
 
     function applyFilters() {
       const q = document.getElementById('searchInput').value.toLowerCase().trim();
       const oemVal = document.getElementById('filterOem').value;
       const statusVal = document.getElementById('filterStatus').value;
-      const indVal = document.getElementById('filterIndustry').value;
 
       filteredRecords = allRecords.filter(r => {
         if (oemVal && r.oemBrand !== oemVal) return false;
         if (statusVal && r.status !== statusVal) return false;
-        if (indVal && r.industry !== indVal) return false;
         if (q) {
           const match = (r.customerName || '').toLowerCase().includes(q) ||
                         (r.oemBrand || '').toLowerCase().includes(q) ||
                         (r.deviceModel || '').toLowerCase().includes(q) ||
                         (r.serialNumber || '').toLowerCase().includes(q) ||
                         (r.startDate || '').toLowerCase().includes(q) ||
-                        (r.endDate || '').toLowerCase().includes(q) ||
-                        (r.industry || '').toLowerCase().includes(q) ||
-                        (r.location || '').toLowerCase().includes(q);
+                        (r.endDate || '').toLowerCase().includes(q);
           if (!match) return false;
         }
         return true;
@@ -1146,12 +1208,12 @@
       document.getElementById('metricTotalCustomers').textContent = uniqueCustomers;
       document.getElementById('metricTotalDevices').textContent = totalDevices;
       document.getElementById('metricTopOem').textContent = topOem;
-      document.getElementById('metricTopOemSub').textContent = topOemPct + '% of fleet';
+      document.getElementById('metricTopOemSub').textContent = topOemPct + '% of contracts';
       document.getElementById('metricActiveDeployments').textContent = activeDevices;
       document.getElementById('metricActiveRate').textContent = activePct + '% operational';
 
       document.getElementById('filteredCountText').textContent = filteredRecords.length + ' of ' + allRecords.length + ' items';
-      document.getElementById('chartTotalBadge').textContent = totalDevices + ' assets';
+      document.getElementById('chartTotalBadge').textContent = totalDevices + ' contracts';
     }
 
     // Chart.js rendering with fixed vibrant brand colors
@@ -1274,7 +1336,6 @@
 
         html += '<tr class="hover:bg-slate-50 transition-colors">' +
           '<td class="py-3 px-4 font-semibold text-slate-900">' + (r.customerName || '—') + '</td>' +
-          '<td class="py-3 px-4 text-slate-600">' + (r.industry || 'Enterprise') + '</td>' +
           '<td class="py-3 px-4">' +
             '<span class="inline-flex items-center gap-1.5 font-semibold" style="color:' + oemColor + '">' +
               '<span class="w-2 h-2 rounded-full shrink-0" style="background-color:' + oemColor + '"></span>' +
@@ -1284,9 +1345,8 @@
           '<td class="py-3 px-4 text-slate-800">' + (r.deviceModel || 'Appliance') + '</td>' +
           '<td class="py-3 px-4 font-mono text-slate-500 text-[11px]">' + (r.serialNumber || '—') + '</td>' +
           '<td class="py-3 px-4">' + statusBadge + '</td>' +
-          '<td class="py-3 px-4 font-mono text-slate-600 text-[11px] whitespace-nowrap">' + (r.startDate || '—') + '</td>' +
-          '<td class="py-3 px-4 font-mono text-slate-600 text-[11px] whitespace-nowrap">' + (r.endDate || '—') + '</td>' +
-          '<td class="py-3 px-4 text-right text-slate-500 text-[11px]">' + (r.location || '—') + '</td>' +
+          '<td class="py-3 px-4 font-mono text-slate-700 font-medium text-[11px] whitespace-nowrap">' + (r.startDate || '—') + '</td>' +
+          '<td class="py-3 px-4 font-mono text-slate-700 font-medium text-[11px] whitespace-nowrap">' + (r.endDate || '—') + '</td>' +
         '</tr>';
       });
 
@@ -1299,32 +1359,33 @@
 
     function downloadTemplateFile() {
       const ws = XLSX.utils.json_to_sheet([
-        { 'Customer Name': 'Apex Capital Partners', 'Industry / Sector': 'Financial Services', 'OEM Brand': 'Cisco', 'Device Type / Model': 'Catalyst 9300 48P', 'Device Serial Number / Hostname': 'CSCO-9300-8812A', 'Status': 'Active', 'Start Date': '2023-08-15', 'End Date': '2027-08-15', 'Location': 'NY-Equinix NY4' },
-        { 'Customer Name': 'Apex Capital Partners', 'Industry / Sector': 'Financial Services', 'OEM Brand': 'F5', 'Device Type / Model': 'BIG-IP i5800 ADC', 'Device Serial Number / Hostname': 'F5-BIGIP-9901X', 'Status': 'Active', 'Start Date': '2023-01-20', 'End Date': '2026-01-20', 'Location': 'NY-Equinix NY4' },
-        { 'Customer Name': 'AcroPoint Logistics', 'Industry / Sector': 'Supply Chain', 'OEM Brand': 'Palo Alto', 'Device Type / Model': 'PA-3260 NGFW', 'Device Serial Number / Hostname': 'PANW-3260-X0921', 'Status': 'Active', 'Start Date': '2022-11-30', 'End Date': '2026-11-30', 'Location': 'Chicago Hub' },
-        { 'Customer Name': 'Zenith Health Systems', 'Industry / Sector': 'Healthcare', 'OEM Brand': 'FortiNet', 'Device Type / Model': 'FortiGate 200F', 'Device Serial Number / Hostname': 'FG-200F-H8821', 'Status': 'Active', 'Start Date': '2021-09-14', 'End Date': '2025-09-14', 'Location': 'Boston Clinical HQ' },
-        { 'Customer Name': 'Zenith Health Systems', 'Industry / Sector': 'Healthcare', 'OEM Brand': 'Algosec', 'Device Type / Model': 'AlgoSec Firewall Analyzer', 'Device Serial Number / Hostname': 'ALGO-SMS-V332', 'Status': 'Active', 'Start Date': '2023-05-18', 'End Date': '2026-05-18', 'Location': 'Boston Clinical HQ' }
+        { 'SL': 1, 'Customer Name': 'Standard Chartered Bank', 'OEM': 'Cisco', 'AMC Start Date': '01-Jul-24', 'AMC End Date': '30-Sep-27' },
+        { 'SL': 2, 'Customer Name': 'Standard Chartered Bank', 'OEM': 'Cisco', 'AMC Start Date': '01-Apr-25', 'AMC End Date': '30-Sep-27' },
+        { 'SL': 3, 'Customer Name': 'UCBL', 'OEM': 'Checkpoint', 'AMC Start Date': '01-Oct-25', 'AMC End Date': '30-Sep-26' },
+        { 'SL': 4, 'Customer Name': 'UCBL', 'OEM': 'Algosec', 'AMC Start Date': '01-Oct-25', 'AMC End Date': '30-Sep-26' },
+        { 'SL': 5, 'Customer Name': 'CDBL', 'OEM': 'F5', 'AMC Start Date': '01-Jan-26', 'AMC End Date': '31-Dec-26' },
+        { 'SL': 6, 'Customer Name': 'CAL Securities Limited', 'OEM': 'FortiNet', 'AMC Start Date': '29-Dec-25', 'AMC End Date': '28-Dec-28' },
+        { 'SL': 7, 'Customer Name': 'AB Bank PLC', 'OEM': 'PaloAlto', 'AMC Start Date': '24-Dec-25', 'AMC End Date': '23-Dec-27' }
       ]);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Customer_OEM_Assets');
-      XLSX.writeFile(wb, 'customer_oem_template.xlsx');
+      XLSX.utils.book_append_sheet(wb, ws, 'AMC_List');
+      XLSX.writeFile(wb, 'AMC_List_Template.xlsx');
     }
 
     function exportCurrentData() {
-      const ws = XLSX.utils.json_to_sheet(filteredRecords.map(r => ({
+      const ws = XLSX.utils.json_to_sheet(filteredRecords.map((r, i) => ({
+        'SL': i + 1,
         'Customer Name': r.customerName,
-        'Industry / Sector': r.industry,
-        'OEM Brand': r.oemBrand,
-        'Device Type / Model': r.deviceModel,
-        'Device Serial Number / Hostname': r.serialNumber,
+        'OEM': r.oemBrand,
+        'Device Model': r.deviceModel,
+        'Serial Number / Hostname': r.serialNumber,
         'Status': r.status,
-        'Start Date': r.startDate || '',
-        'End Date': r.endDate || '',
-        'Location': r.location || ''
+        'AMC Start Date': r.startDate || '',
+        'AMC End Date': r.endDate || ''
       })));
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
-      XLSX.writeFile(wb, 'customer_oem_inventory.xlsx');
+      XLSX.utils.book_append_sheet(wb, ws, 'AMC_Inventory');
+      XLSX.writeFile(wb, 'AMC_customer_oem_inventory.xlsx');
     }
 
     window.addEventListener('DOMContentLoaded', init);

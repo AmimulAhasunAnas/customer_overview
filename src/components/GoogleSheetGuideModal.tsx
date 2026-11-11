@@ -176,12 +176,12 @@ const DEFAULT_GOOGLE_SHEET_URL = "YOUR_COPIED_GOOGLE_SHEET_LINK_HERE";`;
                 <span className="text-slate-500 text-[10px]">Hostname, S/N, Asset Tag</span>
               </div>
               <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                <span className="font-semibold text-slate-800 block">Start Date</span>
-                <span className="text-slate-500 text-[10px]">Contract Start, Install Date</span>
+                <span className="font-semibold text-slate-800 block">AMC Start Date</span>
+                <span className="text-slate-500 text-[10px]">Start Date (e.g. 01-Jul-24)</span>
               </div>
               <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                <span className="font-semibold text-slate-800 block">End Date</span>
-                <span className="text-slate-500 text-[10px]">Warranty Expiry, Contract End</span>
+                <span className="font-semibold text-slate-800 block">AMC End Date</span>
+                <span className="text-slate-500 text-[10px]">End Date (e.g. 30-Sep-27)</span>
               </div>
             </div>
           </div>

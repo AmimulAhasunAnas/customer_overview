@@ -345,15 +345,13 @@ export const DataTable: React.FC<DataTableProps> = ({
                 </div>
               </th>
 
-              <th className="py-3 px-4">Location / Site</th>
-
               <th className="py-3 px-4 text-right print:hidden">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-normal">
             {paginatedRecords.length === 0 ? (
               <tr>
-                <td colSpan={10} className="py-12 text-center text-slate-500">
+                <td colSpan={9} className="py-12 text-center text-slate-500">
                   <p className="text-sm font-medium text-slate-700">No matching assets found</p>
                   <p className="text-xs text-slate-400 mt-1">Try relaxing filters or search terms.</p>
                 </td>
@@ -400,13 +398,8 @@ export const DataTable: React.FC<DataTableProps> = ({
                   </td>
 
                   {/* End Date */}
-                  <td className="py-3 px-4 text-slate-600 font-mono text-[11px] whitespace-nowrap">
+                  <td className="py-3 px-4 text-slate-700 font-mono text-[11px] whitespace-nowrap font-medium">
                     {r.endDate || '—'}
-                  </td>
-
-                  {/* Location */}
-                  <td className="py-3 px-4 text-slate-500 text-[11px]">
-                    {r.location ? <span>{r.location}</span> : <span className="text-slate-300">—</span>}
                   </td>
 
                   {/* Actions */}
