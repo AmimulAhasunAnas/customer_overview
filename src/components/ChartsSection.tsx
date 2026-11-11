@@ -18,32 +18,38 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ records }) => {
 
   const [activeSecondaryView, setActiveSecondaryView] = useState<'customerCount' | 'lifecycle'>('customerCount');
 
-  // Defined professional OEM brand color palette
+  // Defined professional OEM brand color palette specifically matching user OEMs
   const getOemColor = (oem: string): string => {
-    const brandMap: Record<string, string> = {
-      cisco: '#0284c7', // sky-600
-      dell: '#2563eb', // blue-600
-      hp: '#0d9488', // teal-600
-      hpe: '#0d9488',
-      'palo alto': '#ea580c', // orange-600
-      paloalto: '#ea580c',
-      lenovo: '#dc2626', // red-600
-      fortinet: '#b91c1c', // red-700
-      juniper: '#4f46e5', // indigo-600
-      arista: '#7c3aed', // violet-600
-      vmware: '#059669', // emerald-600
-      nutanix: '#0891b2', // cyan-600
-    };
+    if (!oem) return '#64748b';
+    const clean = oem.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    const clean = oem.toLowerCase().trim();
-    for (const [key, color] of Object.entries(brandMap)) {
-      if (clean.includes(key)) return color;
-    }
-    // Fallback colors for other brands
-    const fallbacks = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#64748b'];
+    // User's specific OEMs with official brand identities
+    if (clean.includes('cisco')) return '#0284c7'; // Cisco Blue
+    if (clean === 'f5' || clean.includes('f5networks') || clean.includes('f5')) return '#e11d48'; // F5 Ruby Red
+    if (clean.includes('checkpoint') || clean.includes('chkp')) return '#d946ef'; // Check Point Magenta
+    if (clean.includes('paloalto') || clean.includes('palo') || clean.includes('panw')) return '#f97316'; // Palo Alto Orange
+    if (clean.includes('fortinet') || clean.includes('forti')) return '#b91c1c'; // Fortinet Crimson Red
+    if (clean.includes('algosec') || clean.includes('algo')) return '#059669'; // AlgoSec Green / Teal
+
+    // Additional enterprise hardware & security OEMs
+    if (clean.includes('dell')) return '#2563eb'; // Dell Blue
+    if (clean.includes('hp') || clean.includes('hpe')) return '#0d9488'; // HP Teal
+    if (clean.includes('lenovo')) return '#dc2626'; // Lenovo Red
+    if (clean.includes('juniper')) return '#4f46e5'; // Juniper Indigo
+    if (clean.includes('arista')) return '#7c3aed'; // Arista Violet
+    if (clean.includes('vmware')) return '#16a34a'; // VMware Green
+    if (clean.includes('sophos')) return '#2563eb'; // Sophos Blue
+    if (clean.includes('crowdstrike')) return '#e11d48'; // Crowdstrike Red
+    if (clean.includes('zscaler')) return '#0369a1'; // Zscaler Blue
+
+    // Curated dynamic palette fallback so no OEM is ever dull gray
+    const curatedPalette = [
+      '#0284c7', '#e11d48', '#d946ef', '#f97316', '#b91c1c',
+      '#059669', '#7c3aed', '#4f46e5', '#0d9488', '#ea580c'
+    ];
     let hash = 0;
     for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
-    return fallbacks[Math.abs(hash) % fallbacks.length];
+    return curatedPalette[Math.abs(hash) % curatedPalette.length];
   };
 
   useEffect(() => {

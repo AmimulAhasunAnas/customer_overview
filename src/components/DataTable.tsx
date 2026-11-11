@@ -15,7 +15,7 @@ import {
   Filter,
   Printer,
 } from 'lucide-react';
-import { exportRecordsToExcel } from '../excelUtils';
+import { exportRecordsToExcel, getOemBrandColor } from '../excelUtils';
 
 interface DataTableProps {
   records: CustomerDeviceRecord[];
@@ -373,7 +373,10 @@ export const DataTable: React.FC<DataTableProps> = ({
 
                   {/* OEM Brand */}
                   <td className="py-3 px-4">
-                    <span className="font-semibold text-slate-900">{r.oemBrand}</span>
+                    <span className="inline-flex items-center gap-1.5 font-semibold" style={{ color: getOemBrandColor(r.oemBrand) }}>
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getOemBrandColor(r.oemBrand) }}></span>
+                      {r.oemBrand}
+                    </span>
                   </td>
 
                   {/* Device Model */}

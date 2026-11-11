@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CustomerDeviceRecord } from '../types';
+import { getOemBrandColor } from '../excelUtils';
 import { Building2, ChevronDown, ChevronRight, Server, ShieldCheck, Tag } from 'lucide-react';
 
 interface CustomerGroupedViewProps {
@@ -133,10 +134,10 @@ export const CustomerGroupedView: React.FC<CustomerGroupedViewProps> = ({
                     {oemList.map(([oem, count]) => (
                       <span
                         key={oem}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 rounded-md border border-slate-200"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-md border border-slate-200"
                       >
-                        <Tag className="w-3 h-3 text-slate-400" />
-                        <span className="font-semibold text-slate-900">{oem}</span>
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getOemBrandColor(oem) }}></span>
+                        <span className="font-semibold" style={{ color: getOemBrandColor(oem) }}>{oem}</span>
                         <span className="text-slate-400">({count})</span>
                       </span>
                     ))}
@@ -163,7 +164,12 @@ export const CustomerGroupedView: React.FC<CustomerGroupedViewProps> = ({
                         <tbody className="divide-y divide-slate-100">
                           {group.devices.map((device) => (
                             <tr key={device.id} className="hover:bg-white/80">
-                              <td className="py-2.5 font-semibold text-slate-900">{device.oemBrand}</td>
+                              <td className="py-2.5 font-semibold" style={{ color: getOemBrandColor(device.oemBrand) }}>
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getOemBrandColor(device.oemBrand) }}></span>
+                                  {device.oemBrand}
+                                </span>
+                              </td>
                               <td className="py-2.5 text-slate-800 font-medium">{device.deviceModel}</td>
                               <td className="py-2.5 font-mono text-slate-500 text-[11px]">{device.serialNumber}</td>
                               <td className="py-2.5">

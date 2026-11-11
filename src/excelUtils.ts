@@ -3,6 +3,38 @@ import { CustomerDeviceRecord, DeviceStatus } from './types';
 import { SAMPLE_RECORDS } from './sampleData';
 
 /**
+ * Returns distinct, official brand colors for networking and security OEM vendors
+ */
+export function getOemBrandColor(oem: string): string {
+  if (!oem) return '#64748b';
+  const clean = oem.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // User's specific OEMs
+  if (clean.includes('cisco')) return '#0284c7'; // Cisco Blue
+  if (clean === 'f5' || clean.includes('f5')) return '#e11d48'; // F5 Ruby Red
+  if (clean.includes('checkpoint') || clean.includes('chkp')) return '#d946ef'; // Check Point Magenta
+  if (clean.includes('paloalto') || clean.includes('palo') || clean.includes('panw')) return '#f97316'; // Palo Alto Orange
+  if (clean.includes('fortinet') || clean.includes('forti')) return '#b91c1c'; // Fortinet Crimson Red
+  if (clean.includes('algosec') || clean.includes('algo')) return '#059669'; // AlgoSec Emerald Green
+
+  // Additional enterprise brands
+  if (clean.includes('dell')) return '#2563eb'; // Dell Blue
+  if (clean.includes('hp') || clean.includes('hpe')) return '#0d9488'; // HP Teal
+  if (clean.includes('lenovo')) return '#dc2626'; // Lenovo Red
+  if (clean.includes('juniper')) return '#4f46e5'; // Juniper Indigo
+  if (clean.includes('arista')) return '#7c3aed'; // Arista Violet
+  if (clean.includes('vmware')) return '#16a34a'; // VMware Green
+  if (clean.includes('sophos')) return '#2563eb'; // Sophos Blue
+  if (clean.includes('crowdstrike')) return '#e11d48'; // Crowdstrike Red
+  if (clean.includes('zscaler')) return '#0369a1'; // Zscaler Blue
+
+  const palette = ['#0284c7', '#e11d48', '#d946ef', '#f97316', '#b91c1c', '#059669', '#7c3aed', '#4f46e5', '#0d9488'];
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+  return palette[Math.abs(hash) % palette.length];
+}
+
+/**
  * Normalizes headers and maps raw sheet objects into typed CustomerDeviceRecord items.
  */
 export function parseExcelData(dataBuffer: ArrayBuffer | Uint8Array): {
@@ -614,26 +646,31 @@ export function getStandaloneHtmlString(currentRecords?: CustomerDeviceRecord[])
     let chartOemInstance = null;
     let chartCustomerInstance = null;
 
-    // OEM Brand Palette
-    const OEM_COLORS = {
-      'Cisco': '#0284c7',
-      'Dell': '#2563eb',
-      'HP': '#0d9488',
-      'Palo Alto': '#ea580c',
-      'Lenovo': '#dc2626',
-      'Fortinet': '#b91c1c',
-      'Juniper': '#4f46e5',
-      'Arista': '#7c3aed',
-      'Other': '#64748b'
-    };
-
     function getOemColor(oem) {
-      for (const key of Object.keys(OEM_COLORS)) {
-        if (oem.toLowerCase().includes(key.toLowerCase())) {
-          return OEM_COLORS[key];
-        }
-      }
-      return '#64748b';
+      if (!oem) return '#64748b';
+      const clean = oem.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      // User's specific OEMs with distinct brand identities
+      if (clean.includes('cisco')) return '#0284c7'; // Cisco Blue
+      if (clean === 'f5' || clean.includes('f5')) return '#e11d48'; // F5 Ruby Red
+      if (clean.includes('checkpoint') || clean.includes('chkp')) return '#d946ef'; // Check Point Magenta
+      if (clean.includes('paloalto') || clean.includes('palo') || clean.includes('panw')) return '#f97316'; // Palo Alto Orange
+      if (clean.includes('fortinet') || clean.includes('forti')) return '#b91c1c'; // Fortinet Crimson Red
+      if (clean.includes('algosec') || clean.includes('algo')) return '#059669'; // AlgoSec Emerald Green
+
+      // Additional enterprise brands
+      if (clean.includes('dell')) return '#2563eb';
+      if (clean.includes('hp') || clean.includes('hpe')) return '#0d9488';
+      if (clean.includes('lenovo')) return '#dc2626';
+      if (clean.includes('juniper')) return '#4f46e5';
+      if (clean.includes('arista')) return '#7c3aed';
+      if (clean.includes('vmware')) return '#16a34a';
+
+      // Curated dynamic palette so no OEM ever defaults to dull gray
+      const palette = ['#0284c7', '#e11d48', '#d946ef', '#f97316', '#b91c1c', '#059669', '#7c3aed', '#4f46e5', '#0d9488'];
+      let hash = 0;
+      for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+      return palette[Math.abs(hash) % palette.length];
     }
 
     // Initialize Dashboard
